@@ -1,0 +1,14 @@
+server:
+  port: 8000
+
+# 路由转发，将/member/*的请求转发到/member模块
+spring:
+  cloud:
+    gateway:
+      server:
+        webflux:
+          routes:
+            - id: member
+              uri: http://127.0.0.1:8001
+              predicates:
+                - Path=/member/**

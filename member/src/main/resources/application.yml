@@ -1,0 +1,20 @@
+server:
+  port: 8001
+  servlet:
+    context-path: /member # 方便路由转发
+
+spring:
+  #数据库连接
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3307/train?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
+    username: root
+    password: 741963
+
+#mybatis xml路径
+mybatis:
+  mapper-locations: classpath:/mapper/**/*.xml
+
+logging:
+  level:
+    com.yali.member.mapper: TRACE
