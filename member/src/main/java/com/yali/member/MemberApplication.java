@@ -8,7 +8,7 @@ import org.springframework.context.annotation.ComponentScan;
 @SpringBootApplication
 @ComponentScan("com.yali")
 @MapperScan("com.yali.member.mapper")
-public class MemberApplication {
+public class  MemberApplication {
 
     public static void main(String[] args) {
         SpringApplication.run(com.yali.member.MemberApplication.class, args);
