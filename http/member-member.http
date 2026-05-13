@@ -14,3 +14,17 @@ Content-Type: application/x-www-form-urlencoded
 mobile=
 
 ###
+POST http://localhost:8000/member/member/send-code
+Content-Type: application/json
+
+{
+  "mobile":"13685859696"
+
+}
+###
+POST http://localhost:8000/member/member/login
+Content-Type: application/x-www-form-urlencoded
+
+mobile=13685859696&code=8888
+
+###
