@@ -6,8 +6,25 @@ const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
-      path: '/',
-      redirect: '/login',
+      path: '/home',
+      component: () => import('../views/HomeView.vue'),
+      meta:{
+        loginRequire: true
+      },
+      children: [
+        {
+          path: '/welcome',
+          component: () => import('../views/main/welcome.vue')
+        },{
+          path: '/passenger',
+          component: () => import('../views/main/passenger.vue')
+        },/*{
+          path: 'ticket',
+          component: () => import('../views/main/ticket.vue')
+        },{
+          path: 'order',
+          component: () => import('../views/main/order.vue'),
+        }*/]
     },
     {
       path: '/login',
@@ -15,13 +32,9 @@ const router = createRouter({
       component: () => import('../views/LoginView.vue'),
     },
     {
-      path: '/home',
-      name: 'home',
-      component: () => import('../views/HomeView.vue'),
-      meta: {
-        loginRequire: true,
-      },
-    },
+      path: '/',
+      redirect: 'welcome'
+    }
   ],
 })
 
