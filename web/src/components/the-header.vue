@@ -2,12 +2,12 @@
   <a-layout-header class="header">
     <div class="logo">
       <router-link to="/welcome" style="color: white; font-size: 18px">
-        甲蛙12306
+        鸭梨12306
       </router-link>
     </div>
 
     <div style="float: right; color: white">
-      您好：{{ member.mobile }} &nbsp;&nbsp;
+      您好：{{ memberStore.member.mobile || '游客' }} &nbsp;&nbsp;
       <router-link to="/login" style="color: white">
         退出登录
       </router-link>
@@ -43,20 +43,16 @@
 <script setup>
 import { ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
-// import store from '@/store'
+import { useMemberStore } from '@/stores/member'
 
 defineOptions({
   name: 'TheHeaderView',
 })
 
 const route = useRoute()
-
-// const member = store.state.member
-const member = {
-  mobile: '13000000000',
-  token: 'test-token',
-}
 const selectedKeys = ref([])
+const memberStore = useMemberStore()
+
 
 watch(
   () => route.path,

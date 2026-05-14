@@ -5,6 +5,7 @@ import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.ObjectUtil;
 import com.yali.common.exception.BusinessException;
 import com.yali.common.exception.BusinessExceptionEnum;
+import com.yali.common.util.JwtUtil;
 import com.yali.common.util.SnowUtil;
 import com.yali.member.dto.req.MemberLoginReq;
 import com.yali.member.dto.req.MemberRegisterReq;
@@ -81,6 +82,11 @@ public class MemberService {
             throw new BusinessException(BusinessExceptionEnum.MEMBER_MOBILE_CODE_ERROR);
         }
         MemberLoginResp memberLoginResp = BeanUtil.copyProperties(list, MemberLoginResp.class);
+//        Map<String, Object> map = BeanUtil.beanToMap(memberLoginResp);
+//        String key = "yali";
+//        String token = JWTUtil.createToken(map, key.getBytes());
+        String token = JwtUtil.createToken(memberLoginResp.getId(), memberLoginResp.getMobile());
+        memberLoginResp.setToken(token);
         return memberLoginResp;
     }
 
