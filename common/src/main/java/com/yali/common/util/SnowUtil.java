@@ -7,7 +7,6 @@ import cn.hutool.core.util.IdUtil;
  */
 public class SnowUtil {
 
-    //可以到数据库申请id
     private static long dataCenterId = 1;  //数据中心
     private static long workerId = 1;     //机器标识
 

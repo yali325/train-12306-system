@@ -11,6 +11,6 @@ import org.springframework.context.annotation.ComponentScan;
 public class  MemberApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(com.yali.member.MemberApplication.class, args);
+        SpringApplication.run(MemberApplication.class, args);
     }
 }
