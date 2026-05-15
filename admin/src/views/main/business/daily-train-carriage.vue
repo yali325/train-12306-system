@@ -1,12 +1,13 @@
 <template>
   <p>
     <a-space>
+      <a-date-picker v-model:value="params.date" valueFormat="YYYY-MM-DD" placeholder="请选择日期" />
       <train-select-view v-model="params.trainCode" width="200px"></train-select-view>
-      <a-button type="primary" @click="handleQuery()">查找</a-button>
+      <a-button type="primary" @click="handleQuery()">刷新</a-button>
       <a-button type="primary" @click="onAdd">新增</a-button>
     </a-space>
   </p>
-  <a-table :dataSource="trainCarriages"
+  <a-table :dataSource="dailyTrainCarriages"
            :columns="columns"
            :pagination="pagination"
            @change="handleTableChange"
@@ -32,30 +33,33 @@
       </template>
     </template>
   </a-table>
-  <a-modal v-model:visible="visible" title="火车车厢" @ok="handleOk"
+  <a-modal v-model:open="visible" title="每日车箱" @ok="handleOk"
            ok-text="确认" cancel-text="取消">
-    <a-form :model="trainCarriage" :label-col="{span: 4}" :wrapper-col="{ span: 20 }">
-      <a-form-item label="车次编号">
-        <train-select-view v-model="trainCarriage.trainCode"></train-select-view>
+    <a-form :model="dailyTrainCarriage" :label-col="{span: 4}" :wrapper-col="{ span: 20 }">
+      <a-form-item label="日期">
+        <a-date-picker v-model:value="dailyTrainCarriage.date" valueFormat="YYYY-MM-DD" placeholder="请选择日期" />
       </a-form-item>
-      <a-form-item label="厢号">
-        <a-input v-model:value="trainCarriage.index" />
+      <a-form-item label="车次编号">
+        <train-select-view v-model="dailyTrainCarriage.trainCode" width="200px"></train-select-view>
+      </a-form-item>
+      <a-form-item label="箱序">
+        <a-input v-model:value="dailyTrainCarriage.index" />
       </a-form-item>
       <a-form-item label="座位类型">
-        <a-select v-model:value="trainCarriage.seatType">
+        <a-select v-model:value="dailyTrainCarriage.seatType">
           <a-select-option v-for="item in SEAT_TYPE_ARRAY" :key="item.code" :value="item.code">
             {{item.desc}}
           </a-select-option>
         </a-select>
       </a-form-item>
       <!--<a-form-item label="座位数">-->
-      <!--  <a-input v-model:value="trainCarriage.seatCount" />-->
+      <!--  <a-input v-model:value="dailyTrainCarriage.seatCount" />-->
       <!--</a-form-item>-->
       <a-form-item label="排数">
-        <a-input v-model:value="trainCarriage.rowCount" />
+        <a-input v-model:value="dailyTrainCarriage.rowCount" />
       </a-form-item>
       <!--<a-form-item label="列数">-->
-      <!--  <a-input v-model:value="trainCarriage.colCount" />-->
+      <!--  <a-input v-model:value="dailyTrainCarriage.colCount" />-->
       <!--</a-form-item>-->
     </a-form>
   </a-modal>
@@ -65,16 +69,17 @@
 import { defineComponent, ref, onMounted } from 'vue';
 import {notification} from "ant-design-vue";
 import axios from "axios";
-import TrainSelectView from "@/components/train-select";
+import TrainSelectView from "@/components/train-select.vue";
 
 export default defineComponent({
-  name: "train-carriage-view",
+  name: "daily-train-carriage-view",
   components: {TrainSelectView},
   setup() {
     const SEAT_TYPE_ARRAY = window.SEAT_TYPE_ARRAY;
     const visible = ref(false);
-    let trainCarriage = ref({
+    let dailyTrainCarriage = ref({
       id: undefined,
+      date: undefined,
       trainCode: undefined,
       index: undefined,
       seatType: undefined,
@@ -84,7 +89,7 @@ export default defineComponent({
       createTime: undefined,
       updateTime: undefined,
     });
-    const trainCarriages = ref([]);
+    const dailyTrainCarriages = ref([]);
     // 分页的三个属性名是固定的
     const pagination = ref({
       total: 0,
@@ -93,16 +98,22 @@ export default defineComponent({
     });
     let loading = ref(false);
     let params = ref({
-      trainCode: null
+      trainCode: null,
+      date: null
     });
     const columns = [
+    {
+      title: '日期',
+      dataIndex: 'date',
+      key: 'date',
+    },
     {
       title: '车次编号',
       dataIndex: 'trainCode',
       key: 'trainCode',
     },
     {
-      title: '厢号',
+      title: '箱序',
       dataIndex: 'index',
       key: 'index',
     },
@@ -133,17 +144,17 @@ export default defineComponent({
     ];
 
     const onAdd = () => {
-      trainCarriage.value = {};
+      dailyTrainCarriage.value = {};
       visible.value = true;
     };
 
     const onEdit = (record) => {
-      trainCarriage.value = window.Tool.copy(record);
+      dailyTrainCarriage.value = window.Tool.copy(record);
       visible.value = true;
     };
 
     const onDelete = (record) => {
-      axios.delete("/business/admin/train-carriage/delete/" + record.id).then((response) => {
+      axios.delete("/business/admin/daily-train-carriage/delete/" + record.id).then((response) => {
         const data = response.data;
         if (data.success) {
           notification.success({description: "删除成功！"});
@@ -158,7 +169,7 @@ export default defineComponent({
     };
 
     const handleOk = () => {
-      axios.post("/business/admin/train-carriage/save", trainCarriage.value).then((response) => {
+      axios.post("/business/admin/daily-train-carriage/save", dailyTrainCarriage.value).then((response) => {
         let data = response.data;
         if (data.success) {
           notification.success({description: "保存成功！"});
@@ -181,17 +192,18 @@ export default defineComponent({
         };
       }
       loading.value = true;
-      axios.get("/business/admin/train-carriage/query-list", {
+      axios.get("/business/admin/daily-train-carriage/query-list", {
         params: {
           page: param.page,
           size: param.size,
-          trainCode: params.value.trainCode
+          trainCode: params.value.trainCode,
+          date: params.value.date
         }
       }).then((response) => {
         loading.value = false;
         let data = response.data;
         if (data.success) {
-          trainCarriages.value = data.content.list;
+          dailyTrainCarriages.value = data.content.list;
           // 设置分页控件的值
           pagination.value.current = param.page;
           pagination.value.total = data.content.total;
@@ -218,9 +230,9 @@ export default defineComponent({
 
     return {
       SEAT_TYPE_ARRAY,
-      trainCarriage,
+      dailyTrainCarriage,
       visible,
-      trainCarriages,
+      dailyTrainCarriages,
       pagination,
       columns,
       handleTableChange,

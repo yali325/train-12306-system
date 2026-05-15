@@ -77,8 +77,8 @@
 import { defineComponent, ref, onMounted } from 'vue';
 import {notification} from "ant-design-vue";
 import axios from "axios";
-import TrainSelectView from "@/components/train-select";
-import StationSelectView from "@/components/station-select";
+import TrainSelectView from "@/components/train-select.vue";
+import StationSelectView from "@/components/station-select.vue";
 import dayjs from "dayjs";
 
 export default defineComponent({
