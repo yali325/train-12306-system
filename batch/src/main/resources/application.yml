@@ -1,7 +1,7 @@
 server:
-  port: 8102
+  port: 8103
   servlet:
-    context-path: /business # 方便路由转发
+    context-path: /batch # 方便路由转发
 
 spring:
   #数据库连接

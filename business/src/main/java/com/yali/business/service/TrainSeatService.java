@@ -7,9 +7,11 @@ import cn.hutool.core.util.StrUtil;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import com.yali.business.domain.TrainCarriage;
+import com.yali.business.domain.TrainCarriageExample;
 import com.yali.business.domain.TrainSeat;
 import com.yali.business.domain.TrainSeatExample;
 import com.yali.business.enums.SeatColEnum;
+import com.yali.business.mapper.TrainCarriageMapper;
 import com.yali.business.mapper.TrainSeatMapper;
 import com.yali.business.req.TrainSeatQueryReq;
 import com.yali.business.req.TrainSeatSaveReq;
@@ -33,7 +35,7 @@ public class TrainSeatService {
     private TrainSeatMapper trainSeatMapper;
 
     @Resource
-    private TrainCarriageService trainCarriageService;
+    private TrainCarriageMapper trainCarriageMapper;
 
     public void save(TrainSeatSaveReq req) {
         DateTime now = DateTime.now();
@@ -88,7 +90,7 @@ public class TrainSeatService {
         trainSeatMapper.deleteByExample(trainSeatExample);
 
         // 查找当前车次下的所有的车厢
-        List<TrainCarriage> carriageList = trainCarriageService.selectByTrainCode(trainCode);
+        List<TrainCarriage> carriageList = selectCarriageByTrainCode(trainCode);
         LOG.info("当前车次下的车厢数：{}", carriageList.size());
 
         // 循环生成每个车厢的座位
@@ -129,5 +131,13 @@ public class TrainSeatService {
         TrainSeatExample.Criteria criteria = trainSeatExample.createCriteria();
         criteria.andTrainCodeEqualTo(trainCode);
         return trainSeatMapper.selectByExample(trainSeatExample);
+    }
+
+    private List<TrainCarriage> selectCarriageByTrainCode(String trainCode) {
+        TrainCarriageExample trainCarriageExample = new TrainCarriageExample();
+        trainCarriageExample.setOrderByClause("`index` asc");
+        TrainCarriageExample.Criteria criteria = trainCarriageExample.createCriteria();
+        criteria.andTrainCodeEqualTo(trainCode);
+        return trainCarriageMapper.selectByExample(trainCarriageExample);
     }
 }

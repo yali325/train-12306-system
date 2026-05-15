@@ -1,5 +1,5 @@
 server:
-  port: 8001
+  port: 8101
   servlet:
     context-path: /member # 方便路由转发
 

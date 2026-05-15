@@ -1,5 +1,5 @@
 server:
-  port: 8000
+  port: 8100
 
 # 路由转发，将/member/*的请求转发到/member模块
 spring:
@@ -9,13 +9,17 @@ spring:
         webflux:
           routes:
             - id: member
-              uri: http://127.0.0.1:8001
+              uri: http://127.0.0.1:8101
               predicates:
                 - Path=/member/**
             - id: business
-              uri: http://127.0.0.1:8002
+              uri: http://127.0.0.1:8102
               predicates:
                 - Path=/business/**
+            - id: batch
+              uri: http://127.0.0.1:8102
+              predicates:
+                - Path=/batch/**
           globalcors:
             cors-configurations:
               '[/**]':

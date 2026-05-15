@@ -21,6 +21,7 @@ import jakarta.annotation.Resource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -32,6 +33,10 @@ public class TrainCarriageService {
     @Resource
     private TrainCarriageMapper trainCarriageMapper;
 
+    @Resource
+    private TrainSeatService trainSeatService;
+
+    @Transactional
     public void save(TrainCarriageSaveReq req) {
         DateTime now = DateTime.now();
 
@@ -57,6 +62,8 @@ public class TrainCarriageService {
             trainCarriage.setUpdateTime(now);
             trainCarriageMapper.updateByPrimaryKey(trainCarriage);
         }
+
+        trainSeatService.genTrainSeat(req.getTrainCode());
     }
 
     private TrainCarriage selectByUnique(String trainCode, Integer index) {
@@ -97,8 +104,13 @@ public class TrainCarriageService {
         return pageResp;
     }
 
+    @Transactional
     public void delete(Long id) {
+        TrainCarriage trainCarriage = trainCarriageMapper.selectByPrimaryKey(id);
         trainCarriageMapper.deleteByPrimaryKey(id);
+        if (ObjectUtil.isNotEmpty(trainCarriage)) {
+            trainSeatService.genTrainSeat(trainCarriage.getTrainCode());
+        }
     }
 
     public List<TrainCarriage> selectByTrainCode(String trainCode) {
