@@ -17,7 +17,7 @@ spring:
               predicates:
                 - Path=/business/**
             - id: batch
-              uri: http://127.0.0.1:8102
+              uri: http://127.0.0.1:8103
               predicates:
                 - Path=/batch/**
           globalcors:
