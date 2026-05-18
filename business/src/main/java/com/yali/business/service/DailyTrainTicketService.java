@@ -9,10 +9,7 @@ import cn.hutool.core.util.ObjUtil;
 import cn.hutool.core.util.ObjectUtil;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
-import com.yali.business.domain.DailyTrain;
-import com.yali.business.domain.DailyTrainTicket;
-import com.yali.business.domain.DailyTrainTicketExample;
-import com.yali.business.domain.TrainStation;
+import com.yali.business.domain.*;
 import com.yali.business.enums.SeatTypeEnum;
 import com.yali.business.enums.TrainTypeEnum;
 import com.yali.business.mapper.DailyTrainTicketMapper;
@@ -164,5 +161,21 @@ public class DailyTrainTicketService {
         }
         LOG.info("生成日期【{}】车次【{}】的余票信息结束", DateUtil.formatDate(date), trainCode);
 
+    }
+
+    public DailyTrainTicket selectByUnique(Date date, String trainCode,
+                                            String start, String end) {
+        DailyTrainTicketExample dailyTrainTicketExample = new DailyTrainTicketExample();
+        dailyTrainTicketExample.createCriteria()
+                .andDateEqualTo(date)
+                .andTrainCodeEqualTo(trainCode)
+                .andStartEqualTo(start)
+                .andEndEqualTo(end);
+        List<DailyTrainTicket> list = dailyTrainTicketMapper.selectByExample(dailyTrainTicketExample);
+        if (CollUtil.isNotEmpty(list)) {
+            return list.get(0);
+        } else {
+            return null;
+        }
     }
 }

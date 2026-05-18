@@ -18,13 +18,13 @@ const router = createRouter({
         },{
           path: '/passenger',
           component: () => import('../views/main/passenger.vue')
-        },/*{
-          path: 'ticket',
+        },{
+          path: '/ticket',
           component: () => import('../views/main/ticket.vue')
         },{
-          path: 'order',
+          path: '/order',
           component: () => import('../views/main/order.vue'),
-        }*/]
+        }]
     },
     {
       path: '/login',
@@ -33,7 +33,7 @@ const router = createRouter({
     },
     {
       path: '/',
-      redirect: 'welcome'
+      redirect: '/welcome'
     }
   ],
 })

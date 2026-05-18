@@ -3,7 +3,7 @@ import './assets/main.css'
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 
-import Antd from 'ant-design-vue'
+import Antd, { notification } from 'ant-design-vue'
 import App from './App.vue'
 import router from './router'
 import 'ant-design-vue/dist/reset.css';
@@ -18,12 +18,6 @@ const icons = Icons;
 for (const i in icons) {
   app.component(i, icons[i]);
 }
-
-app.use(createPinia())
-app.use(router)
-app.use(Antd)
-
-app.mount('#app')
 
 //Vite环境变量
 axios.defaults.baseURL = import.meta.env.VITE_SERVER
@@ -51,8 +45,7 @@ axios.interceptors.response.use(function (response) {
   return response;
 }, error => {
   console.log('返回错误：', error);
-  const response = error.response;
-  const status = response.status;
+  const status = error.response?.status;
   if (status === 401) {
     // 判断状态码是401 跳转到登录页
     console.log("未登录或登录超时，跳到登录页");
@@ -64,3 +57,8 @@ axios.interceptors.response.use(function (response) {
   return Promise.reject(error);
 });
 
+app.use(createPinia())
+app.use(router)
+app.use(Antd)
+
+app.mount('#app')

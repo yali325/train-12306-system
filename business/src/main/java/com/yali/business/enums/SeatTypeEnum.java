@@ -6,7 +6,7 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 
-public enum SeatTypeEnum {
+public enum  SeatTypeEnum {
 
     YDZ("1", "一等座", new BigDecimal("0.4")),
     EDZ("2", "二等座", new BigDecimal("0.3")),
