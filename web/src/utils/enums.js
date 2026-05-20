@@ -27,9 +27,42 @@ export const SEAT_COL = {
   EDZ_C: { code: 'C', desc: 'C', type: '2' },
   EDZ_D: { code: 'D', desc: 'D', type: '2' },
   EDZ_F: { code: 'F', desc: 'F', type: '2' },
+  RW_A: { code: 'A', desc: '上铺A', type: '3' },
+  RW_B: { code: 'B', desc: '下铺A', type: '3' },
+  RW_C: { code: 'C', desc: '上铺B', type: '3' },
+  RW_D: { code: 'D', desc: '下铺B', type: '3' },
+  YW_A: { code: 'A', desc: '上铺A', type: '4' },
+  YW_B: { code: 'B', desc: '中铺A', type: '4' },
+  YW_C: { code: 'C', desc: '下铺A', type: '4' },
+  YW_D: { code: 'D', desc: '上铺B', type: '4' },
+  YW_E: { code: 'E', desc: '中铺B', type: '4' },
+  YW_F: { code: 'F', desc: '下铺B', type: '4' },
+}
+
+export const CONFIRM_ORDER_STATUS = {
+  INIT: { code: 'I', desc: '初始' },
+  PENDING: { code: 'P', desc: '处理中' },
+  SUCCESS: { code: 'S', desc: '成功' },
+  FAILURE: { code: 'F', desc: '失败' },
+  EMPTY: { code: 'E', desc: '无票' },
+  CANCEL: { code: 'C', desc: '取消' },
 }
 
 export const PASSENGER_TYPE_ARRAY = Object.values(PASSENGER_TYPE)
 export const TRAIN_TYPE_ARRAY = Object.values(TRAIN_TYPE)
 export const SEAT_TYPE_ARRAY = Object.values(SEAT_TYPE)
 export const SEAT_COL_ARRAY = Object.values(SEAT_COL)
+export const CONFIRM_ORDER_STATUS_ARRAY = Object.values(CONFIRM_ORDER_STATUS)
+
+Object.assign(window, {
+  PASSENGER_TYPE,
+  TRAIN_TYPE,
+  SEAT_TYPE,
+  SEAT_COL,
+  CONFIRM_ORDER_STATUS,
+  PASSENGER_TYPE_ARRAY,
+  TRAIN_TYPE_ARRAY,
+  SEAT_TYPE_ARRAY,
+  SEAT_COL_ARRAY,
+  CONFIRM_ORDER_STATUS_ARRAY,
+})

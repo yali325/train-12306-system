@@ -23,9 +23,9 @@
         </a-space>
       </template>
       <template v-else-if="column.dataIndex === 'type'">
-        <span v-for="item in PASSENGER_TYPE_ARRAY" :key="item.value">
-          <span v-if="item.value === record.type">
-            {{item.label}}
+        <span v-for="item in PASSENGER_TYPE_ARRAY" :key="item.code">
+          <span v-if="item.code === record.type">
+            {{item.desc}}
           </span>
         </span>
       </template>
@@ -42,12 +42,8 @@
       </a-form-item>
       <a-form-item label="旅客类型">
         <a-select v-model:value="passenger.type">
-          <a-select-option
-            v-for="item in PASSENGER_TYPE_ARRAY"
-            :key="item.value"
-            :value="item.value"
-          >
-            {{ item.label }}
+          <a-select-option v-for="item in PASSENGER_TYPE_ARRAY" :key="item.code" :value="item.code">
+            {{item.desc}}
           </a-select-option>
         </a-select>
       </a-form-item>
@@ -55,127 +51,153 @@
   </a-modal>
 </template>
 
-<script setup>
-import { ref, onMounted } from 'vue'
-import { notification } from 'ant-design-vue'
-import axios from 'axios'
-import { PASSENGER_TYPE_ARRAY } from '@/config/passengerType'
+<script>
+import { defineComponent, ref, onMounted } from 'vue';
+import {notification} from "ant-design-vue";
+import axios from "axios";
 
-// 弹窗显示
-const visible = ref(false)
-
-// 当前编辑/新增的乘客
-const passenger = ref({
-  id: undefined,
-  memberId: undefined,
-  name: undefined,
-  idCard: undefined,
-  type: undefined,
-  createTime: undefined,
-  updateTime: undefined,
-})
-
-// 乘客列表
-const passengers = ref([])
-
-// 分页
-const pagination = ref({
-  total: 0,
-  current: 1,
-  pageSize: 10,
-})
-
-// 表格 loading
-const loading = ref(false)
-
-// 表格列定义
-const columns = [
-  { title: '会员id', dataIndex: 'memberId', key: 'memberId' },
-  { title: '姓名', dataIndex: 'name', key: 'name' },
-  { title: '身份证', dataIndex: 'idCard', key: 'idCard' },
-  { title: '旅客类型', dataIndex: 'type', key: 'type' },
-  { title: '操作', dataIndex: 'operation', key: 'operation' },
-]
-
-// 新增
-const onAdd = () => {
-  passenger.value = {}
-  visible.value = true
-}
-
-// 编辑
-const onEdit = (record) => {
-  passenger.value = { ...record } // 简单深拷贝
-  visible.value = true
-}
-
-// 删除
-const onDelete = (record) => {
-  axios.delete('/member/passenger/delete/' + record.id).then((res) => {
-    const data = res.data
-    if (data.success) {
-      notification.success({ description: '删除成功！' })
-      handleQuery({
-        page: pagination.value.current,
-        size: pagination.value.pageSize,
-      })
-    } else {
-      notification.error({ description: data.message })
+export default defineComponent({
+  name: "passenger-view",
+  setup() {
+    const PASSENGER_TYPE_ARRAY = window.PASSENGER_TYPE_ARRAY;
+    const visible = ref(false);
+    let passenger = ref({
+      id: undefined,
+      memberId: undefined,
+      name: undefined,
+      idCard: undefined,
+      type: undefined,
+      createTime: undefined,
+      updateTime: undefined,
+    });
+    const passengers = ref([]);
+    // 分页的三个属性名是固定的
+    const pagination = ref({
+      total: 0,
+      current: 1,
+      pageSize: 10,
+    });
+    let loading = ref(false);
+    const columns = [
+    {
+      title: '姓名',
+      dataIndex: 'name',
+      key: 'name',
+    },
+    {
+      title: '身份证',
+      dataIndex: 'idCard',
+      key: 'idCard',
+    },
+    {
+      title: '旅客类型',
+      dataIndex: 'type',
+      key: 'type',
+    },
+    {
+      title: '操作',
+      dataIndex: 'operation'
     }
-  })
-}
+    ];
 
-// 弹窗确认
-const handleOk = () => {
-  axios.post('/member/passenger/save', passenger.value).then((res) => {
-    const data = res.data
-    if (data.success) {
-      notification.success({ description: '保存成功！' })
-      visible.value = false
-      handleQuery({
-        page: pagination.value.current,
-        size: pagination.value.pageSize,
-      })
-    } else {
-      notification.error({ description: data.message })
-    }
-  })
-}
+    const onAdd = () => {
+      passenger.value = {};
+      visible.value = true;
+    };
 
-// 查询列表
-const handleQuery = (param) => {
-  if (!param) {
-    param = { page: 1, size: pagination.value.pageSize }
-  }
-  loading.value = true
-  axios
-    .get('/member/passenger/query-list', {
-      params: { page: param.page, size: param.size },
-    })
-    .then((res) => {
-      loading.value = false
-      const data = res.data
-      if (data.success) {
-        passengers.value = data.content.list.map(item => ({
-          ...item,
-          type: Number(item.type)
-        }))
-        pagination.value.current = param.page
-        pagination.value.total = data.content.total
-      } else {
-        notification.error({ description: data.message })
+    const onEdit = (record) => {
+      passenger.value = window.Tool.copy(record);
+      visible.value = true;
+    };
+
+    const onDelete = (record) => {
+      axios.delete("/member/passenger/delete/" + record.id).then((response) => {
+        const data = response.data;
+        if (data.success) {
+          notification.success({description: "删除成功！"});
+          handleQuery({
+            page: pagination.value.current,
+            size: pagination.value.pageSize,
+          });
+        } else {
+          notification.error({description: data.message});
+        }
+      });
+    };
+
+    const handleOk = () => {
+      axios.post("/member/passenger/save", passenger.value).then((response) => {
+        let data = response.data;
+        if (data.success) {
+          notification.success({description: "保存成功！"});
+          visible.value = false;
+          handleQuery({
+            page: pagination.value.current,
+            size: pagination.value.pageSize
+          });
+        } else {
+          notification.error({description: data.message});
+        }
+      });
+    };
+
+    const handleQuery = (param) => {
+      if (!param) {
+        param = {
+          page: 1,
+          size: pagination.value.pageSize
+        };
       }
-    })
-}
+      loading.value = true;
+      axios.get("/member/passenger/query-list", {
+        params: {
+          page: param.page,
+          size: param.size
+        }
+      }).then((response) => {
+        loading.value = false;
+        let data = response.data;
+        if (data.success) {
+          passengers.value = data.content.list;
+          // 设置分页控件的值
+          pagination.value.current = param.page;
+          pagination.value.total = data.content.total;
+        } else {
+          notification.error({description: data.message});
+        }
+      });
+    };
 
-// 表格分页变化
-const handleTableChange = (page) => {
-  handleQuery({ page: page.current, size: page.pageSize })
-}
+    const handleTableChange = (pagination) => {
+      // console.log("看看自带的分页参数都有啥：" + pagination);
+      handleQuery({
+        page: pagination.current,
+        size: pagination.pageSize
+      });
+    };
 
-// 页面初始化查询
-onMounted(() => {
-  handleQuery({ page: 1, size: pagination.value.pageSize })
-})
+    onMounted(() => {
+      handleQuery({
+        page: 1,
+        size: pagination.value.pageSize
+      });
+    });
+
+    return {
+      PASSENGER_TYPE_ARRAY,
+      passenger,
+      visible,
+      passengers,
+      pagination,
+      columns,
+      handleTableChange,
+      handleQuery,
+      loading,
+      onAdd,
+      handleOk,
+      onEdit,
+      onDelete
+    };
+  },
+});
 </script>
-

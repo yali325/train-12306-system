@@ -26,7 +26,7 @@
       </template>
     </template>
   </a-table>
-  <a-modal v-model:open="visible" title="每日车站" @ok="handleOk"
+  <a-modal v-model:visible="visible" title="每日车站" @ok="handleOk"
            ok-text="确认" cancel-text="取消">
     <a-form :model="dailyTrainStation" :label-col="{span: 4}" :wrapper-col="{ span: 20 }">
       <a-form-item label="日期">
@@ -151,7 +151,7 @@ export default defineComponent({
     }
     ];
     watch(() => dailyTrainStation.value.name, ()=>{
-      if (window.Tool.isNotEmpty(dailyTrainStation.value.name)) {
+      if (Tool.isNotEmpty(dailyTrainStation.value.name)) {
         dailyTrainStation.value.namePinyin = pinyin(dailyTrainStation.value.name, { toneType: 'none'}).replaceAll(" ", "");
       } else {
         dailyTrainStation.value.namePinyin = "";

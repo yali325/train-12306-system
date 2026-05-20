@@ -1,4 +1,4 @@
-package com.yali.member.dto.req;
+package com.yali.member.req;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.constraints.NotBlank;

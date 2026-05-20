@@ -27,6 +27,16 @@ const SEAT_COL = {
   EDZ_C: { code: 'C', desc: 'C', type: '2' },
   EDZ_D: { code: 'D', desc: 'D', type: '2' },
   EDZ_F: { code: 'F', desc: 'F', type: '2' },
+  RW_A: { code: 'A', desc: '上铺A', type: '3' },
+  RW_B: { code: 'B', desc: '下铺A', type: '3' },
+  RW_C: { code: 'C', desc: '上铺B', type: '3' },
+  RW_D: { code: 'D', desc: '下铺B', type: '3' },
+  YW_A: { code: 'A', desc: '上铺A', type: '4' },
+  YW_B: { code: 'B', desc: '中铺A', type: '4' },
+  YW_C: { code: 'C', desc: '下铺A', type: '4' },
+  YW_D: { code: 'D', desc: '上铺B', type: '4' },
+  YW_E: { code: 'E', desc: '中铺B', type: '4' },
+  YW_F: { code: 'F', desc: '下铺B', type: '4' },
 }
 
 const CONFIRM_ORDER_STATUS = {

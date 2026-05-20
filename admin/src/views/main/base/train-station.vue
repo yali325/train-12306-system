@@ -25,7 +25,7 @@
       </template>
     </template>
   </a-table>
-  <a-modal v-model:open="visible" title="火车车站" @ok="handleOk"
+  <a-modal v-model:visible="visible" title="火车车站" @ok="handleOk"
            ok-text="确认" cancel-text="取消">
     <a-form :model="trainStation" :label-col="{span: 4}" :wrapper-col="{ span: 20 }">
       <a-form-item label="车次编号">
@@ -33,6 +33,7 @@
       </a-form-item>
       <a-form-item label="站序">
         <a-input v-model:value="trainStation.index" />
+        <span style="color: red">重要：第1站是0，对显示销售图有影响</span>
       </a-form-item>
       <a-form-item label="站名">
         <station-select-view v-model="trainStation.name"></station-select-view>
@@ -141,7 +142,7 @@ export default defineComponent({
     }
     ];
     watch(() => trainStation.value.name, ()=>{
-      if (window.Tool.isNotEmpty(trainStation.value.name)) {
+      if (Tool.isNotEmpty(trainStation.value.name)) {
         trainStation.value.namePinyin = pinyin(trainStation.value.name, { toneType: 'none'}).replaceAll(" ", "");
       } else {
         trainStation.value.namePinyin = "";

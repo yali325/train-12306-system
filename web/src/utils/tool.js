@@ -49,4 +49,6 @@ const Tool = {
   },
 }
 
+window.Tool = Tool
+
 export default Tool

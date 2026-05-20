@@ -14,7 +14,17 @@ public enum SeatColEnum {
     EDZ_B("B", "B", "2"),
     EDZ_C("C", "C", "2"),
     EDZ_D("D", "D", "2"),
-    EDZ_F("F", "F", "2");
+    EDZ_F("F", "F", "2"),
+    RW_A("A", "上铺A", "3"),
+    RW_B("B", "下铺A", "3"),
+    RW_C("C", "上铺B", "3"),
+    RW_D("D", "下铺B", "3"),
+    YW_A("A", "上铺A", "4"),
+    YW_B("B", "中铺A", "4"),
+    YW_C("C", "下铺A", "4"),
+    YW_D("D", "上铺B", "4"),
+    YW_E("E", "中铺B", "4"),
+    YW_F("F", "下铺B", "4");
 
     private String code;
 

@@ -2,7 +2,6 @@ import { createRouter, createWebHistory } from 'vue-router'
 
 const routes = [{
     path: '/',
-    redirect: '/welcome',
     component: () => import('../views/main.vue'),
     children: [{
       path: 'welcome',
@@ -11,7 +10,7 @@ const routes = [{
       path: 'about',
       component: () => import('../views/main/about.vue'),
     }, {
-      path: 'base',
+      path: 'base/',
       children: [{
         path: 'station',
         component: () => import('../views/main/base/station.vue'),
@@ -29,8 +28,11 @@ const routes = [{
         component: () => import('../views/main/base/train-seat.vue'),
       }]
     }, {
-      path: 'business',
+      path: 'business/',
       children: [{
+        path: 'sk-token',
+        component: () => import('../views/main/business/sk-token.vue'),
+      }, {
         path: 'confirm-order',
         component: () => import('../views/main/business/confirm-order.vue'),
       }, {
@@ -50,12 +52,21 @@ const routes = [{
         component: () => import('../views/main/business/daily-train-ticket.vue'),
       }]
     }, {
-      path: 'batch',
+      path: 'batch/',
       children: [{
         path: 'job',
         component: () => import('../views/main/batch/job.vue')
       }]
+    }, {
+      path: 'member/',
+      children: [{
+        path: 'ticket',
+        component: () => import('../views/main/member/ticket.vue')
+      }]
     }]
+  }, {
+    path: '',
+    redirect: '/welcome'
   }];
 
 const router = createRouter({

@@ -14,7 +14,6 @@
 import {defineComponent, onMounted, ref, watch} from 'vue';
 import axios from "axios";
 import {notification} from "ant-design-vue";
-import Tool from "@/utils/tool";
 
 export default defineComponent({
   name: "train-select-view",

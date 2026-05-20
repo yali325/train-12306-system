@@ -42,6 +42,9 @@ public class TrainCarriageService {
 
         // 自动计算出列数和总座位数
         List<SeatColEnum> seatColEnums = SeatColEnum.getColsByType(req.getSeatType());
+        if (CollUtil.isEmpty(seatColEnums)) {
+            throw new BusinessException(BusinessExceptionEnum.BUSINESS_SEAT_COL_EMPTY_ERROR);
+        }
         req.setColCount(seatColEnums.size());
         req.setSeatCount(req.getColCount() * req.getRowCount());
 

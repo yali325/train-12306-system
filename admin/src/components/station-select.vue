@@ -23,7 +23,7 @@ export default defineComponent({
     const name = ref();
     const stations = ref([]);
     const localWidth = ref(props.width);
-    if (window.Tool.isEmpty(props.width)) {
+    if (Tool.isEmpty(props.width)) {
       localWidth.value = "100%";
     }
 
@@ -62,7 +62,7 @@ export default defineComponent({
     const onChange = (value) => {
       emit('update:modelValue', value);
       let station = stations.value.filter(item => item.code === value)[0];
-      if (window.Tool.isEmpty(station)) {
+      if (Tool.isEmpty(station)) {
         station = {};
       }
       emit('change', station);

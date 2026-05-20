@@ -23,4 +23,10 @@ const SessionStorage = {
   },
 }
 
+Object.assign(window, {
+  SESSION_ORDER,
+  SESSION_TICKET_PARAMS,
+  SessionStorage,
+})
+
 export default SessionStorage

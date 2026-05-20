@@ -34,7 +34,7 @@
       </template>
     </template>
   </a-table>
-  <a-modal v-model:open="visible" title="每日车次" @ok="handleOk"
+  <a-modal v-model:visible="visible" title="每日车次" @ok="handleOk"
            ok-text="确认" cancel-text="取消">
     <a-form :model="dailyTrain" :label-col="{span: 4}" :wrapper-col="{ span: 20 }">
       <a-form-item label="日期">
@@ -70,7 +70,7 @@
       </a-form-item>
     </a-form>
   </a-modal>
-  <a-modal v-model:open="genDailyVisible" title="生成车次" @ok="handleGenDailyOk"
+  <a-modal v-model:visible="genDailyVisible" title="生成车次" @ok="handleGenDailyOk"
            :confirm-loading="genDailyLoading" ok-text="确认" cancel-text="取消">
     <a-form :model="genDaily" :label-col="{span: 4}" :wrapper-col="{ span: 20 }">
       <a-form-item label="日期">
@@ -255,7 +255,7 @@ export default defineComponent({
 
     const onChangeCode = (train) => {
       console.log("车次下拉组件选择：", train);
-      let t = window.Tool.copy(train);
+      let t = Tool.copy(train);
       delete t.id;
       // 用assign可以合并
       dailyTrain.value = Object.assign(dailyTrain.value, t);

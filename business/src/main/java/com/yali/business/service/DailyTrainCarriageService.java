@@ -16,6 +16,8 @@ import com.yali.business.mapper.DailyTrainCarriageMapper;
 import com.yali.business.req.DailyTrainCarriageQueryReq;
 import com.yali.business.req.DailyTrainCarriageSaveReq;
 import com.yali.business.resp.DailyTrainCarriageQueryResp;
+import com.yali.common.exception.BusinessException;
+import com.yali.common.exception.BusinessExceptionEnum;
 import com.yali.common.resp.PageResp;
 import com.yali.common.util.SnowUtil;
 import jakarta.annotation.Resource;
@@ -43,6 +45,9 @@ public class DailyTrainCarriageService {
 
         // 自动计算出列数和总座位数
         List<SeatColEnum> seatColEnums = SeatColEnum.getColsByType(req.getSeatType());
+        if (CollUtil.isEmpty(seatColEnums)) {
+            throw new BusinessException(BusinessExceptionEnum.BUSINESS_SEAT_COL_EMPTY_ERROR);
+        }
         req.setColCount(seatColEnums.size());
         req.setSeatCount(req.getColCount() * req.getRowCount());
 

@@ -64,7 +64,7 @@
 
     <a-modal
         title="用户"
-        v-model:open="modalVisible"
+        v-model:visible="modalVisible"
         :confirm-loading="modalLoading"
         @ok="handleModalOk"
     >
@@ -181,7 +181,7 @@ export default defineComponent({
      */
     const handleEdit = (record) => {
       modalVisible.value = true;
-      job.value = window.Tool.copy(record);
+      job.value = Tool.copy(record);
     };
 
     /**
@@ -252,7 +252,7 @@ export default defineComponent({
     };
 
     const getEnumValue = (key, obj) => {
-      return window.Tool.getEnumValue(key, obj);
+      return Tool.getEnumValue(key, obj);
     };
 
     onMounted(() => {

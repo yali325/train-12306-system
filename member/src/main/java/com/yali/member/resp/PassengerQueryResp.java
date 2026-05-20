@@ -1,4 +1,4 @@
-package com.yali.member.dto.resp;
+package com.yali.member.resp;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;

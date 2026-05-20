@@ -24,7 +24,7 @@
       </template>
     </template>
   </a-table>
-  <a-modal v-model:open="visible" title="车站" @ok="handleOk"
+  <a-modal v-model:visible="visible" title="车站" @ok="handleOk"
            ok-text="确认" cancel-text="取消">
     <a-form :model="station" :label-col="{span: 4}" :wrapper-col="{ span: 20 }">
       <a-form-item label="站名">
@@ -90,7 +90,7 @@ export default defineComponent({
 
     // http://pinyin-pro.cn/
     watch(() => station.value.name, ()=>{
-      if (window.Tool.isNotEmpty(station.value.name)) {
+      if (Tool.isNotEmpty(station.value.name)) {
         station.value.namePinyin = pinyin(station.value.name, { toneType: 'none'}).replaceAll(" ", "");
         station.value.namePy = pinyin(station.value.name, { pattern: 'first', toneType: 'none'}).replaceAll(" ", "");
       } else {

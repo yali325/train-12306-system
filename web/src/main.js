@@ -9,6 +9,9 @@ import router from './router'
 import 'ant-design-vue/dist/reset.css';
 import axios from 'axios';
 import * as Icons from '@ant-design/icons-vue';
+import './utils/session-storage'
+import './utils/tool'
+import './utils/enums'
 import { useMemberStore } from '@/stores/member'
 
 

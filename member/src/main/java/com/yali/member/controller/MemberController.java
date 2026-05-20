@@ -1,10 +1,10 @@
 package com.yali.member.controller;
 
 import com.yali.common.resp.CommonResp;
-import com.yali.member.dto.req.MemberLoginReq;
-import com.yali.member.dto.req.MemberRegisterReq;
+import com.yali.common.resp.MemberLoginResp;
 import com.yali.member.Service.MemberService;
-import com.yali.member.dto.resp.MemberLoginResp;
+import com.yali.member.req.MemberLoginReq;
+import com.yali.member.req.MemberRegisterReq;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PostMapping;
