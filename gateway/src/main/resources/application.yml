@@ -3,21 +3,25 @@ server:
 
 # 路由转发，将/member/*的请求转发到/member模块
 spring:
+  application:
+    name: gateway
+  profiles:
+    active: dev
   cloud:
     gateway:
       server:
         webflux:
           routes:
             - id: member
-              uri: http://127.0.0.1:8101
+              uri: lb://member
               predicates:
                 - Path=/member/**
             - id: business
-              uri: http://127.0.0.1:8102
+              uri: lb://business
               predicates:
                 - Path=/business/**
             - id: batch
-              uri: http://127.0.0.1:8103
+              uri: lb://batch
               predicates:
                 - Path=/batch/**
           globalcors:
@@ -28,3 +32,11 @@ spring:
                 allowed-methods: "*"
                 allow-credentials: true
                 max-age: 3600
+    nacos:
+      # 注册与发现中心
+      discovery:
+        server-addr: 127.0.0.1:8848
+        namespace: 9e9dcaef-40da-4862-9966-78039bea0dc1
+        service: gateway
+        heartbeat-interval: 5
+        weight: 1

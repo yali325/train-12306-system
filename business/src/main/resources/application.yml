@@ -4,16 +4,32 @@ server:
     context-path: /business # 方便路由转发
 
 spring:
+  application:
+    name: business
+  profiles:
+    active: dev
   #数据库连接
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://localhost:3307/train?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
     username: root
     password: 741963
-
-  application:
-    name: business
-
+  cloud:
+    nacos:
+      # 配置中心
+      config:
+        server-addr: 127.0.0.1:8848
+        namespace: 9e9dcaef-40da-4862-9966-78039bea0dc1
+        file-extension: yml
+        group: DEFAULT_GROUP
+        refresh-enabled: true  # 配置变更自动刷新
+      # 注册与发现中心
+      discovery:
+        server-addr: 127.0.0.1:8848
+        namespace: 9e9dcaef-40da-4862-9966-78039bea0dc1
+        service: business
+        heartbeat-interval: 5
+        weight: 1
 #mybatis xml路径
 mybatis:
   mapper-locations: classpath:/mapper/**/*.xml
