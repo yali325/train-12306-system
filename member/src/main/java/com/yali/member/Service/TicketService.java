@@ -14,6 +14,7 @@ import com.yali.member.mapper.TicketMapper;
 import com.yali.member.req.TicketQueryReq;
 import com.yali.member.resp.TicketQueryResp;
 import jakarta.annotation.Resource;
+import org.apache.seata.core.context.RootContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -34,7 +35,7 @@ public class TicketService {
      * @param req
      */
     public void save(MemberTicketReq req) throws Exception {
-        // LOG.info("seata全局事务ID save: {}", RootContext.getXID());
+         LOG.info("seata全局事务ID save: {}", RootContext.getXID());
         DateTime now = DateTime.now();
         Ticket ticket = BeanUtil.copyProperties(req, Ticket.class);
         ticket.setId(SnowUtil.getSnowflakeNextId());

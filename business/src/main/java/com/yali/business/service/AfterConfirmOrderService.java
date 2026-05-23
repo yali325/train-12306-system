@@ -12,6 +12,8 @@ import com.yali.business.req.ConfirmOrderTicketReq;
 import com.yali.common.req.MemberTicketReq;
 import com.yali.common.resp.CommonResp;
 import jakarta.annotation.Resource;
+import org.apache.seata.core.context.RootContext;
+import org.apache.seata.spring.annotation.GlobalTransactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -44,9 +46,9 @@ public class AfterConfirmOrderService {
      *  更新确认订单为成功
      */
     // @Transactional
-    // @GlobalTransactional
-    public void afterDoConfirm(DailyTrainTicket dailyTrainTicket, List<DailyTrainSeat> finalSeatList, List<ConfirmOrderTicketReq> tickets, ConfirmOrder confirmOrder){
-        // LOG.info("seata全局事务ID: {}", RootContext.getXID());
+     @GlobalTransactional
+    public void afterDoConfirm(DailyTrainTicket dailyTrainTicket, List<DailyTrainSeat> finalSeatList, List<ConfirmOrderTicketReq> tickets, ConfirmOrder confirmOrder) throws Exception {
+         LOG.info("seata全局事务ID: {}", RootContext.getXID());
         for (int j = 0; j < finalSeatList.size(); j++) {
             DailyTrainSeat dailyTrainSeat = finalSeatList.get(j);
             DailyTrainSeat seatForUpdate = new DailyTrainSeat();
@@ -130,9 +132,9 @@ public class AfterConfirmOrderService {
 
             // 模拟调用方出现异常
             // Thread.sleep(10000);
-            // if (1 == 1) {
-            //     throw new Exception("测试异常");
-            // }
+//             if (1 == 1) {
+//                 throw new Exception("测试异常");
+//             }
         }
     }
 }

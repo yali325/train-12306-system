@@ -36,7 +36,7 @@ spring:
       # 注册与发现中心
       discovery:
         server-addr: 127.0.0.1:8848
-        namespace: 9e9dcaef-40da-4862-9966-78039bea0dc1
+        namespace: 1a7dda0c-1ac0-4f74-979a-6bc32f2bfcc3
         service: gateway
         heartbeat-interval: 5
         weight: 1

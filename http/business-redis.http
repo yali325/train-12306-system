@@ -1,0 +1,8 @@
+GET http://localhost:8100/business/redis/set/123/test1
+Accept: application/json
+
+###
+GET http://localhost:8100/business/redis/get/123
+Accept: application/json
+
+###

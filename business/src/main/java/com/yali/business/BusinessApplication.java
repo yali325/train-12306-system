@@ -10,10 +10,10 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.core.env.Environment;
 
 @SpringBootApplication
-@ComponentScan("com.yali")
+@ComponentScan(basePackages = {"com.yali.business", "com.yali.common"})
 @MapperScan("com.yali.business.mapper")
 @EnableFeignClients("com.yali.business.feign")
-public class BusinessApplication {
+public class  BusinessApplication {
 
     private static final Logger LOG = LoggerFactory.getLogger(BusinessApplication.class);
 

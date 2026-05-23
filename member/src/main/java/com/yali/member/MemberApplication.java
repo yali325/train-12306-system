@@ -6,7 +6,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.ComponentScan;
 
 @SpringBootApplication
-@ComponentScan("com.yali")
+@ComponentScan(basePackages = {"com.yali.member", "com.yali.common"})
 @MapperScan("com.yali.member.mapper")
 public class  MemberApplication {
 
