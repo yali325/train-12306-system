@@ -18,23 +18,39 @@ spring:
     nacos:
       # 配置中心
       config:
-        server-addr: 127.0.0.1:8848
+        server-addr: 127.0.0.1:8900
         namespace: 1a7dda0c-1ac0-4f74-979a-6bc32f2bfcc3
         file-extension: yml
         group: DEFAULT_GROUP
         refresh-enabled: true  # 配置变更自动刷新
       # 注册与发现中心
       discovery:
-        server-addr: 127.0.0.1:8848
+        server-addr: 127.0.0.1:8900
         namespace: 1a7dda0c-1ac0-4f74-979a-6bc32f2bfcc3
         service: business
         heartbeat-interval: 5
         weight: 1
+    #sentinel
+    sentinel:
+      transport:
+        port: 8719
+        dashboard: localhost:8090
+      #sentinel配置到nacos
+      datasource:
+        flow-rules:
+          nacos:
+            server-addr: 127.0.0.1:8900
+            namespace: 1a7dda0c-1ac0-4f74-979a-6bc32f2bfcc3
+            group-id: TRAIN_GROUP
+            data-id: sentinel
+            rule-type: flow
+            data-type: json
+
   data:
+    #redis
     redis:
       host: localhost
-      port: 6371
-      password: 741963
+      port: 6379
   cache:
     type: redis
     redis:
@@ -50,33 +66,33 @@ logging:
   level:
     com.yali.member.mapper: TRACE
 
-seata:
-  # seata配置中心，从nacos获取配置
-  config:
-    type: nacos
-    nacos:
-      server-addr: 127.0.0.1:8848
-      namespace: 1a7dda0c-1ac0-4f74-979a-6bc32f2bfcc3
-      group: SEATA_GROUP
-      context-path:
-      username: nacos
-      password: nacos
-      data-id: seataServer.yml
-  # seata 注册中心，注册到nacos
-  registry:
-    type: nacos
-    nacos:
-      application: seata-server
-      server-addr: 127.0.0.1:8848
-      group: SEATA_GROUP
-      namespace: 1a7dda0c-1ac0-4f74-979a-6bc32f2bfcc3
-      cluster: default
-      context-path:
-      username: nacos
-      password: nacos
-  # seata 事务组名称
-  tx-service-group: train-group
-  # 事务组和集群的关联——放在nacos配置里面了
-  service:
-    vgroup-mapping:
-      train-group: default
+#seata:
+#  # seata配置中心，从nacos获取配置
+#  config:
+#    type: nacos
+#    nacos:
+#      server-addr: 127.0.0.1:8900
+#      namespace: 1a7dda0c-1ac0-4f74-979a-6bc32f2bfcc3
+#      group: SEATA_GROUP
+#      context-path:
+#      username: nacos
+#      password: nacos
+#      data-id: seataServer.yml
+#  # seata 注册中心，注册到nacos
+#  registry:
+#    type: nacos
+#    nacos:
+#      application: seata-server
+#      server-addr: 127.0.0.1:8900
+#      group: SEATA_GROUP
+#      namespace: 1a7dda0c-1ac0-4f74-979a-6bc32f2bfcc3
+#      cluster: default
+#      context-path:
+#      username: nacos
+#      password: nacos
+#  # seata 事务组名称
+#  tx-service-group: train-group
+#  # 事务组和集群的关联——放在nacos配置里面了
+#  service:
+#    vgroup-mapping:
+#      train-group: default

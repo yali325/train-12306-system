@@ -19,24 +19,27 @@ spring:
     nacos:
       # 配置中心
       config:
-        server-addr: 127.0.0.1:8848
+        server-addr: 127.0.0.1:8900
         namespace: 1a7dda0c-1ac0-4f74-979a-6bc32f2bfcc3
         file-extension: yml
         group: DEFAULT_GROUP
         refresh-enabled: true  # 配置变更自动刷新
       # 注册与发现中心
       discovery:
-        server-addr: 127.0.0.1:8848
+        server-addr: 127.0.0.1:8900
         namespace: 1a7dda0c-1ac0-4f74-979a-6bc32f2bfcc3
         service: member
         heartbeat-interval: 5
         weight: 1
+    # 让 OpenFeign 的一些注解属性延迟解析，不要在 Spring 容器启动早期就立刻解析。
+    openfeign:
+      lazy-attributes-resolution: true
 seata:
   # seata配置中心，从nacos获取配置
   config:
     type: nacos
     nacos:
-      server-addr: 127.0.0.1:8848
+      server-addr: 127.0.0.1:8900
       namespace: 1a7dda0c-1ac0-4f74-979a-6bc32f2bfcc3
       group: SEATA_GROUP
       context-path:
@@ -48,7 +51,7 @@ seata:
     type: nacos
     nacos:
       application: seata-server
-      server-addr: 127.0.0.1:8848
+      server-addr: 127.0.0.1:8900
       group: SEATA_GROUP
       namespace: 1a7dda0c-1ac0-4f74-979a-6bc32f2bfcc3
       cluster: default
@@ -69,3 +72,8 @@ mybatis:
 logging:
   level:
     com.yali.member.mapper: TRACE
+
+#sentinel默认不监控feign，需改成true
+feign:
+  sentinel:
+    enabled: true
