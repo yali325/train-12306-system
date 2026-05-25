@@ -53,7 +53,7 @@
   <a-modal v-model:visible="visible" title="请核对以下信息"
            style="top: 50px; width: 800px"
            ok-text="确认" cancel-text="取消"
-           @ok="handleOk">
+           @ok="showFirstImageCodeModal">
     <div class="order-tickets">
       <a-row class="order-tickets-header" v-if="tickets.length > 0">
         <a-col :span="3">乘客</a-col>
@@ -94,11 +94,14 @@
         </div>
         <div style="color: #999999">提示：您可以选择{{tickets.length}}个座位</div>
       </div>
+      <!-- 当前 ConfirmOrderController 未实现 query-line-count/cancel 排队接口，先隐藏排队体验入口。 -->
+      <!--
       <br>
       <div style="color: red">
         体验排队购票，加入多人一起排队购票：
         <a-input-number v-model:value="lineNumber" :min="0" :max="20" />
       </div>
+      -->
       <!--<br/>-->
       <!--最终购票：{{tickets}}-->
       <!--最终选座：{{chooseSeatObj}}-->
@@ -119,7 +122,7 @@
         </template>
       </a-input>
     </p>
-    <a-button type="danger" block @click="handleOk">输入验证码后开始购票</a-button>
+    <a-button type="danger" block :loading="confirmOrderLoading" @click="handleOk">输入验证码后开始购票</a-button>
   </a-modal>
 
   <!-- 第一层验证码 纯前端 -->
@@ -139,6 +142,8 @@
     <a-button type="danger" block @click="validFirstImageCode">提交验证码</a-button>
   </a-modal>
 
+  <!-- 当前 ConfirmOrderController 未实现 /query-line-count 和 /cancel，先注释排队弹窗。 -->
+  <!--
   <a-modal v-model:visible="lineModalVisible" title="排队购票" :footer="null" :maskClosable="false" :closable="false"
            style="top: 50px; width: 400px">
     <div class="book-line">
@@ -152,6 +157,7 @@
     <br/>
     <a-button type="danger" @click="onCancelOrder">取消购票</a-button>
   </a-modal>
+  -->
 </template>
 
 <script>
@@ -206,10 +212,12 @@ export default defineComponent({
     const tickets = ref([]);
     const PASSENGER_TYPE_ARRAY = window.PASSENGER_TYPE_ARRAY;
     const visible = ref(false);
-    const lineModalVisible = ref(false);
-    const confirmOrderId = ref();
-    const confirmOrderLineCount = ref(-1);
-    const lineNumber = ref(5);
+    const confirmOrderLoading = ref(false);
+    // 排队体验功能依赖 ConfirmOrderController 的 query-line-count/cancel 接口，当前后端未接入，先注释。
+    // const lineModalVisible = ref(false);
+    // const confirmOrderId = ref();
+    // const confirmOrderLineCount = ref(-1);
+    // const lineNumber = ref(5);
 
     // 勾选或去掉某个乘客时，在购票列表中加上或去掉一张表
     watch(() => passengerChecks.value, (newVal, oldVal)=>{
@@ -339,6 +347,14 @@ export default defineComponent({
     };
 
     const handleOk = () => {
+      if (confirmOrderLoading.value) {
+        return;
+      }
+      if (Tool.isEmpty(imageCode.value)) {
+        notification.error({description: '验证码不能为空'});
+        return;
+      }
+
       console.log("选好的座位：", chooseSeatObj.value);
 
       // 设置每张票的座位
@@ -365,25 +381,47 @@ export default defineComponent({
 
       console.log("最终购票：", tickets.value);
 
+      confirmOrderLoading.value = true;
       axios.post("/business/confirm-order/do", {
         dailyTrainTicketId: dailyTrainTicket.id,
         date: dailyTrainTicket.date,
         trainCode: dailyTrainTicket.trainCode,
         start: dailyTrainTicket.start,
         end: dailyTrainTicket.end,
-        tickets: tickets.value
+        tickets: tickets.value,
+        imageCodeToken: imageCodeToken.value,
+        imageCode: imageCode.value
+        // lineNumber: lineNumber.value
       }).then((response) => {
         let data = response.data;
         if (data.success) {
           notification.success({description: "下单成功！"});
           visible.value = false;
+          imageCodeModalVisible.value = false;
+          firstImageCodeModalVisible.value = false;
+          imageCode.value = null;
+          imageCodeToken.value = null;
+          imageCodeSrc.value = null;
+          // 当前后端 /do 已同步完成购票，没有返回排队订单 id，也没有 query-line-count 接口，不能继续轮询。
+          // lineModalVisible.value = true;
+          // confirmOrderId.value = data.content;
+          // queryLineCount();
         } else {
           notification.error({description: data.message});
+          loadImageCode();
         }
+      }).catch((error) => {
+        console.error("下单失败：", error);
+        notification.error({description: error.response?.data?.message || '下单请求失败，请稍后重试'});
+        loadImageCode();
+      }).finally(() => {
+        confirmOrderLoading.value = false;
       });
     }
 
     /* ------------------- 定时查询订单状态 --------------------- */
+    /*
+    当前 ConfirmOrderController 未实现 /query-line-count/{id}，先注释掉轮询逻辑。
     // 确认订单后定时查询
     let queryLineCountInterval;
 
@@ -420,6 +458,7 @@ export default defineComponent({
         });
       }, 500);
     };
+    */
 
     /* ------------------- 第二层验证码 --------------------- */
     const imageCodeModalVisible = ref();
@@ -478,6 +517,8 @@ export default defineComponent({
     /**
      * 取消排队
      */
+    /*
+    当前 ConfirmOrderController 未实现 /cancel/{id}，先注释掉取消排队逻辑。
     const onCancelOrder = () => {
       axios.get("/business/confirm-order/cancel/" + confirmOrderId.value).then((response) => {
         let data = response.data;
@@ -496,6 +537,7 @@ export default defineComponent({
         }
       });
     };
+    */
 
     onMounted(() => {
       handleQueryPassenger();
@@ -515,6 +557,7 @@ export default defineComponent({
       chooseSeatObj,
       SEAT_COL_ARRAY,
       handleOk,
+      confirmOrderLoading,
       imageCodeToken,
       imageCodeSrc,
       imageCode,
@@ -526,12 +569,12 @@ export default defineComponent({
       firstImageCodeTarget,
       firstImageCodeModalVisible,
       showFirstImageCodeModal,
-      validFirstImageCode,
-      lineModalVisible,
-      confirmOrderId,
-      confirmOrderLineCount,
-      onCancelOrder,
-      lineNumber
+      validFirstImageCode
+      // lineModalVisible,
+      // confirmOrderId,
+      // confirmOrderLineCount,
+      // onCancelOrder,
+      // lineNumber
     };
   },
 });
