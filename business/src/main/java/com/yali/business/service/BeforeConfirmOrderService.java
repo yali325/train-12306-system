@@ -7,7 +7,6 @@ import com.alibaba.fastjson.JSON;
 import com.yali.business.domain.ConfirmOrder;
 import com.yali.business.dto.ConfirmOrderMQDto;
 import com.yali.business.enums.ConfirmOrderStatusEnum;
-import com.yali.business.enums.RocketMQTopicEnum;
 import com.yali.business.mapper.ConfirmOrderMapper;
 import com.yali.business.req.ConfirmOrderDoReq;
 import com.yali.business.req.ConfirmOrderTicketReq;
@@ -16,14 +15,12 @@ import com.yali.common.exception.BusinessException;
 import com.yali.common.exception.BusinessExceptionEnum;
 import com.yali.common.util.SnowUtil;
 import jakarta.annotation.Resource;
-import org.apache.rocketmq.spring.core.RocketMQTemplate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -40,8 +37,7 @@ public class BeforeConfirmOrderService {
 
     // @Resource
     // public RocketMQTemplate rocket
-    @Resource
-    private RocketMQTemplate rocketMQTemplate;
+    // public RocketMQTemplate rocketMQTemplate;
 
     @Resource
     private ConfirmOrderService confirmOrderService;
@@ -49,10 +45,8 @@ public class BeforeConfirmOrderService {
     @SentinelResource(value = "beforeDoConfirm", blockHandler = "beforeDoConfirmBlock")
     public Long beforeDoConfirm(ConfirmOrderDoReq req) {
         Long id = null;
-        List<ConfirmOrder> createdOrderList = new ArrayList<>();
         // 根据前端传值，加入排队人数
-        int lineNumber = Math.max(0, Math.min(req.getLineNumber(), 20));
-        for (int i = 0; i < lineNumber + 1; i++) {
+        for (int i = 0; i < req.getLineNumber() + 1; i++) {
             req.setMemberId(LoginMemberContext.getId());
             // 校验令牌余量
             boolean validSkToken = skTokenService.validSkToken(req.getDate(), req.getTrainCode(), LoginMemberContext.getId());
@@ -84,33 +78,19 @@ public class BeforeConfirmOrderService {
             confirmOrder.setStatus(ConfirmOrderStatusEnum.INIT.getCode());
             confirmOrder.setTickets(JSON.toJSONString(tickets));
             confirmOrderMapper.insert(confirmOrder);
-            createdOrderList.add(confirmOrder);
 
+            // 发送MQ排队购票
+            ConfirmOrderMQDto confirmOrderMQDto = new ConfirmOrderMQDto();
+            confirmOrderMQDto.setDate(req.getDate());
+            confirmOrderMQDto.setTrainCode(req.getTrainCode());
+            confirmOrderMQDto.setLogId(MDC.get("LOG_ID"));
+            String reqJson = JSON.toJSONString(confirmOrderMQDto);
+            // LOG.info("排队购票，发送mq开始，消息：{}", reqJson);
+            // rocketMQTemplate.convertAndSend(RocketMQTopicEnum.CONFIRM_ORDER.getCode(), reqJson);
+            // LOG.info("排队购票，发送mq结束");
+            confirmOrderService.doConfirm(confirmOrderMQDto);
             id = confirmOrder.getId();
         }
-
-        // 只需要发送一条MQ消息，消费者会按日期和车次批量处理所有INIT订单。
-        ConfirmOrderMQDto confirmOrderMQDto = new ConfirmOrderMQDto();
-        confirmOrderMQDto.setDate(req.getDate());
-        confirmOrderMQDto.setTrainCode(req.getTrainCode());
-        confirmOrderMQDto.setLogId(MDC.get("LOG_ID"));
-        String reqJson = JSON.toJSONString(confirmOrderMQDto);
-
-        try {
-            LOG.info("排队购票，发送mq开始，消息：{}", reqJson);
-            rocketMQTemplate.syncSend(RocketMQTopicEnum.CONFIRM_ORDER.getCode(), reqJson, 10000);
-            LOG.info("排队购票，发送mq结束");
-        } catch (Exception e) {
-            LOG.error("排队购票，发送mq失败，标记本次创建的订单为失败：{}", createdOrderList, e);
-            createdOrderList.forEach(confirmOrder -> {
-                confirmOrder.setStatus(ConfirmOrderStatusEnum.FAILURE.getCode());
-                confirmOrder.setUpdateTime(new Date());
-                confirmOrderMapper.updateByPrimaryKeySelective(confirmOrder);
-            });
-            throw new BusinessException(BusinessExceptionEnum.CONFIRM_ORDER_EXCEPTION);
-        }
-
-//        confirmOrderService.doConfirm(confirmOrderMQDto);
         return id;
     }
 

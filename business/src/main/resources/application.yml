@@ -98,9 +98,9 @@ logging:
 #      train-group: default
 
 #rocketmq
-rocketmq:
-  name-server: 127.0.0.1:9876
-  producer:
-    group: train-confirm-order-producer
-    send-message-timeout: 10000
-    retry-times-when-send-failed: 1
+#rocketmq:
+#  name-server: 127.0.0.1:9876
+#  producer:
+#    group: train-confirm-order-producer
+#    send-message-timeout: 10000
+#    retry-times-when-send-failed: 1
