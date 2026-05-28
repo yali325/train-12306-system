@@ -18,14 +18,14 @@ spring:
     nacos:
       # 配置中心
       config:
-        server-addr: 127.0.0.1:8900
+        server-addr: localhost:8848
         namespace: 1a7dda0c-1ac0-4f74-979a-6bc32f2bfcc3
         file-extension: yml
         group: DEFAULT_GROUP
         refresh-enabled: true  # 配置变更自动刷新
       # 注册与发现中心
       discovery:
-        server-addr: 127.0.0.1:8900
+        server-addr: localhost:8848
         namespace: 1a7dda0c-1ac0-4f74-979a-6bc32f2bfcc3
         service: batch
         heartbeat-interval: 5

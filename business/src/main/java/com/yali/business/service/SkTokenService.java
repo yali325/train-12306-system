@@ -145,7 +145,7 @@ public class SkTokenService {
         String skTokenCountKey = RedisKeyPreEnum.SK_TOKEN_COUNT + "-" + DateUtil.formatDate(date) + "-" + trainCode;
         Object skTokenCount = redisTemplate.opsForValue().get(skTokenCountKey);
         if (skTokenCount != null) {
-            LOG.info("缓存中有该车次令牌大闸的k ey：{}", skTokenCountKey);
+            LOG.info("缓存中有该车次令牌大闸的key：{}", skTokenCountKey);
             Long count = redisTemplate.opsForValue().decrement(skTokenCountKey, 1);
             if (count < 0L) {
                 LOG.error("获取令牌失败：{}", skTokenCountKey);

@@ -19,14 +19,14 @@ spring:
     nacos:
       # 配置中心
       config:
-        server-addr: 127.0.0.1:8900
+        server-addr: localhost:8848
         namespace: 1a7dda0c-1ac0-4f74-979a-6bc32f2bfcc3
         file-extension: yml
         group: DEFAULT_GROUP
         refresh-enabled: true  # 配置变更自动刷新
       # 注册与发现中心
       discovery:
-        server-addr: 127.0.0.1:8900
+        server-addr: localhost:8848
         namespace: 1a7dda0c-1ac0-4f74-979a-6bc32f2bfcc3
         service: member
         heartbeat-interval: 5
@@ -39,7 +39,7 @@ seata:
   config:
     type: nacos
     nacos:
-      server-addr: 127.0.0.1:8900
+      server-addr: localhost:8848
       namespace: 1a7dda0c-1ac0-4f74-979a-6bc32f2bfcc3
       group: SEATA_GROUP
       context-path:
@@ -51,7 +51,7 @@ seata:
     type: nacos
     nacos:
       application: seata-server
-      server-addr: 127.0.0.1:8900
+      server-addr: localhost:8848
       group: SEATA_GROUP
       namespace: 1a7dda0c-1ac0-4f74-979a-6bc32f2bfcc3
       cluster: default

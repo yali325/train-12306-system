@@ -19,6 +19,7 @@ import com.yali.common.util.SnowUtil;
 import jakarta.annotation.Resource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -47,6 +48,8 @@ public class DailyTrainService {
 
     @Resource
     private DailyTrainTicketService dailyTrainTicketService;
+    @Autowired
+    private SkTokenService skTokenService;
 
     public void save(DailyTrainSaveReq req) {
         DateTime now = DateTime.now();
@@ -140,6 +143,9 @@ public class DailyTrainService {
 
         // 生成该车次的余票数据
         dailyTrainTicketService.genDaily(dailyTrain, date, train.getCode());
+
+        //生成该车次的令牌数据
+        skTokenService.genDaily(date, train.getCode());
 
         LOG.info("生成日期【{}】车次【{}】的信息结束", DateUtil.formatDate(date), train.getCode());
     }

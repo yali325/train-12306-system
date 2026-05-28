@@ -3,6 +3,7 @@ package com.yali.business.controller;
 import com.alibaba.csp.sentinel.annotation.SentinelResource;
 import com.alibaba.csp.sentinel.slots.block.BlockException;
 import com.yali.business.req.ConfirmOrderDoReq;
+import com.yali.business.service.BeforeConfirmOrderService;
 import com.yali.business.service.ConfirmOrderService;
 import com.yali.common.exception.BusinessExceptionEnum;
 import com.yali.common.resp.CommonResp;
@@ -19,14 +20,20 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/confirm-order")
 public class ConfirmOrderController {
+
     private static final Logger LOG = LoggerFactory.getLogger(ConfirmOrderController.class);
 
     @Resource
-    private ConfirmOrderService confirmOrderService;
+    private BeforeConfirmOrderService beforeConfirmOrderService;
+
     @Autowired
     private StringRedisTemplate redisTemplate;
+
     @Value("${spring.profiles.active}")
     private String env;
+
+    @Resource
+    private ConfirmOrderService confirmOrderService;
 
     // 接口的资源名称不要和接口路径一致，会导致限流后走不到降级方法中
     @SentinelResource(value = "confirmOrderDo", blockHandler = "doConfirmBlock")
@@ -49,8 +56,21 @@ public class ConfirmOrderController {
                 redisTemplate.delete(imageCodeToken);
             }
         }
-        confirmOrderService.doConfirm(req);
-        return new CommonResp<>();
+
+        Long id = beforeConfirmOrderService.beforeDoConfirm(req);
+        return new CommonResp<>(String.valueOf(id));
+    }
+
+    @GetMapping("/query-line-count/{id}")
+    public CommonResp<Integer> queryLineCount(@PathVariable Long id) {
+        Integer count = confirmOrderService.queryLineCount(id);
+        return new CommonResp<>(count);
+    }
+
+    @GetMapping("/cancel/{id}")
+    public CommonResp<Integer> cancel(@PathVariable Long id) {
+        Integer count = confirmOrderService.cancel(id);
+        return new CommonResp<>(count);
     }
 
     /** 降级方法，需包含限流方法的所有参数和BlockException参数，且返回值要保持一致
@@ -64,5 +84,7 @@ public class ConfirmOrderController {
         commonResp.setSuccess(false);
         commonResp.setMessage(BusinessExceptionEnum.CONFIRM_ORDER_FLOW_EXCEPTION.getDesc());
         return commonResp;
+
     }
+
 }
