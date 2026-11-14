@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # 微服务售票系统｜高并发购票场景实践
 
 ![Java](https://img.shields.io/badge/Java-17-ED8B00?logo=openjdk&logoColor=white)
@@ -7,20 +6,20 @@
 ![Vue](https://img.shields.io/badge/Vue-3.5-42B883?logo=vuedotjs&logoColor=white)
 ![License](https://img.shields.io/badge/license-not%20specified-lightgrey)
 
-一个面向火车票查询与高并发购票场景的 Spring Cloud 微服务项目，重点展示从请求准入、消息排队到区间库存与成组选座的完整链路。系统覆盖会员登录、乘客管理、车次与余票查询、验证码校验、购票排队、异步出票、座位选择、订单状态查询及每日车次数据生成。
+一个面向火车票查询与高并发购票场景的 Spring Cloud 微服务项目，覆盖会员登录、乘客管理、车次与余票查询、验证码校验、订单异步受理、后台出票、座位选择、订单状态查询及每日车次数据生成。
 
-项目重点实践了 RocketMQ 异步削峰、Redis 业务准入、车次粒度互斥、座位区间复用、Sentinel 流量保护以及 Nacos 服务注册与发现。
+项目重点实践了订单与 Outbox 同事务、RocketMQ 逐单消费、Redis Lua 令牌桶、Redisson 车次锁、座位区间复用、Sentinel 入口流控以及 Nacos 服务注册与发现。
 
 > 本项目用于后端技术学习与工程实践，尚未达到真实铁路售票系统或生产交易系统的安全、可靠性和合规要求。
 
 ## 项目亮点
 
 - **微服务拆分**：按网关、会员、业务、批处理和公共组件拆分模块，通过 Nacos 完成服务注册与发现。
-- **异步出票**：订单先以 `INIT` 状态落库，再投递 RocketMQ，由消费者后台完成查余票、选座和出票。
-- **流量分层保护**：非 dev 环境图形验证码、Sentinel 接入、Redis 令牌大闸和车次粒度锁共同减少无效请求对数据库的冲击。
+- **可靠异步出票**：`INIT` 订单与待发事件同事务落库，Outbox 后台投递 RocketMQ；消费者按 `orderId` 一单一消息出票。
+- **流量分层保护**：非 dev 环境图形验证码、Sentinel 入口资源和按日期车次的 Redis Lua 令牌桶控制请求进入；当前压测参数不代表生产限流阈值。
 - **区间座位模型**：每个物理座位使用二进制字符串记录不同站段的占用状态，支持不重叠区间复用。
-- **排队状态机**：订单在 `INIT / PENDING / SUCCESS / FAILURE / EMPTY / CANCEL` 之间流转，前端可轮询排队状态。
-- **动态车次数据**：支持通过 Quartz 创建定时任务；`DailyTrainJob` 执行时生成当前日期后第 15 天的每日车次、车站、车厢、座位、区间余票和令牌数据。
+- **库存一致性**：Redisson RLock 按日期车次串行选座，本地事务更新座位、区间余票和订单；座位旧值条件更新防止旧快照覆盖。
+- **动态车次数据**：支持通过 Quartz 创建定时任务，生成指定日期的每日车次、车站、车厢、座位和区间余票。
 - **双端前端**：提供用户端和管理端 Vue 应用，覆盖购票流程与基础数据管理。
 
 ## 技术栈
@@ -30,7 +29,7 @@
 | 后端基础 | Java 17、Spring Boot 3.5、Spring MVC、Spring AOP |
 | 微服务 | Spring Cloud Gateway、OpenFeign、Nacos、Spring Cloud LoadBalancer |
 | 数据访问 | MyBatis、PageHelper、MySQL 8 |
-| 缓存与并发 | Redis、Redisson 依赖、ThreadLocal |
+| 缓存与并发 | Redis Lua、Redisson RLock、ThreadLocal |
 | 消息队列 | RocketMQ |
 | 流量治理 | Sentinel、Nacos 数据源 |
 | 任务调度 | Quartz |
@@ -42,16 +41,15 @@
 
 | 能力 | 当前状态 |
 |---|---|
-| RocketMQ 订单排队 | 已实现；消息按日期和车次唤醒批量拉单 |
+| RocketMQ 逐单出票 | 已实现；消息携带 `orderId`，消费者同步处理并按终态幂等跳过 |
 | 座位区间位图 | 已实现 |
 | 相对选座偏移 | 已实现 |
-| Redis 令牌大闸 | 已实现；不是按时间补充的标准 Token Bucket |
-| 车次粒度锁 | 当前分支为 `SET NX + 10s TTL` 的开发版实现 |
-| Redisson `RLock` | 已引入依赖，尚未在当前车次锁代码中启用 |
-| Sentinel | 客户端、注解与 Nacos 数据源已接入；规则文件不在仓库中 |
+| Redis 令牌桶 | 已实现；Redis Lua 按日期车次及 Redis 时间原子补充、扣减令牌 |
+| 车次粒度锁 | 已使用 Redisson RLock；同车次等锁串行出票，其他车次可并发 |
+| Sentinel | 购票入口资源、blockHandler 和 Nacos 规则数据源已接入；本地压测未验证限流阈值效果 |
 | Seata 分布式事务 | 配置或注解处于注释/未完整启用状态 |
-| Outbox、订单级消费幂等 | 规划中，尚未实现 |
-| 数据库初始化与自动化测试 | 尚待补充 |
+| Outbox、订单级消费幂等 | 已实现；事件至少一次投递，终态订单重复消息直接确认 |
+| 数据库初始化与自动化测试 | 基础及增量 SQL 已提供；自动化测试和故障注入仍待补充 |
 
 ## 系统架构
 
@@ -71,7 +69,8 @@ flowchart LR
     B --> R[(Redis)]
     B --> MQ[(RocketMQ)]
     B --> S[Sentinel Dashboard]
-    B -->|OpenFeign| M
+    B -->|TICKET_ISSUED| MQ
+    MQ -->|会员车票事件| M
     Q -->|OpenFeign| B
 
     G -.服务发现.-> N[Nacos]
@@ -111,37 +110,35 @@ sequenceDiagram
     Web->>Gateway: POST /business/confirm-order/do
     Gateway->>Gateway: 校验 JWT
     Gateway->>Business: 转发购票请求
-    Business->>Redis: 非 dev 环境校验图形验证码
-    Business->>Redis: 原子扣减车次令牌
-    Business->>DB: 创建 INIT 确认订单
-    Business->>MQ: 发送 CONFIRM_ORDER 消息
-    Business-->>Web: 返回 orderId
-
-    MQ->>Consumer: 投递日期、车次与日志号
-    Consumer->>Redis: 获取日期+车次粒度开发版锁
-    Consumer->>DB: 批量查询同组 INIT 订单
-    loop 逐笔出票
-        Consumer->>DB: INIT → PENDING
-        Consumer->>DB: 查询区间余票和具体座位
-        Consumer->>DB: 更新座位位图与区间余票
-        Consumer->>Member: 保存会员车票
-        Consumer->>DB: PENDING → SUCCESS/EMPTY/FAILURE
-    end
+    Business->>Redis: 非 dev 环境校验验证码、按车次扣令牌
+    Business->>DB: 事务写请求键、INIT 订单和 ORDER_CREATED Outbox
+    Business-->>Web: 返回 orderId，表示已受理
+    Business->>DB: 后台领取待投递事件
+    Business->>MQ: 投递 CONFIRM_ORDER(orderId)
+    MQ->>Consumer: 一条消息对应一笔订单
+    Consumer->>Redis: 等待日期+车次 RLock
+    Consumer->>DB: 查余票、按位图选座
+    Consumer->>DB: 事务更新订单、座位、区间余票及 TICKET_ISSUED Outbox
+    Consumer-->>MQ: 正常返回后确认消费
+    Business->>MQ: 后台投递 TICKET_ISSUED
+    MQ->>Member: 异步保存会员车票
 ```
 
 当前 RocketMQ 消息主要包含：
 
 ```json
 {
+  "eventId": 123456789,
+  "orderId": 987654321,
   "date": "示意日期值",
-  "trainCode": "G123",
+  "trainCode": "G9001",
   "logId": "trace-id"
 }
 ```
 
 > 上述 JSON 为便于阅读的结构示意。当前代码直接通过 Fastjson 序列化 `java.util.Date`，实际线格式应以运行时抓取结果为准。
 
-完整订单已经保存在 MySQL。消息更接近“某日某车次存在待处理订单”的唤醒通知；消费者使用日期、车次和 `INIT` 状态批量拉取订单，每批取 5 条并循环，直到这一组没有 `INIT` 订单。
+完整订单已经保存在 MySQL，消息通过 `orderId` 精确定位一笔。Outbox 投递允许重复消息；消费者拿锁后重查订单，已到 `SUCCESS / EMPTY / CANCEL / FAILURE` 等终态就直接确认，不重复扣库存。当前没有按日期车次批量拉取 `INIT` 订单的循环。
 
 ## 座位区间复用
 
@@ -207,12 +204,13 @@ sell = 10000
 ```mermaid
 stateDiagram-v2
     [*] --> INIT: 创建订单
-    INIT --> PENDING: 消费者开始处理
-    INIT --> CANCEL: 用户取消排队
-    PENDING --> SUCCESS: 出票成功
-    PENDING --> EMPTY: 余票不足
-    PENDING --> FAILURE: 出票异常
+    INIT --> SUCCESS: 出票事务提交
+    INIT --> EMPTY: 余票不足
+    INIT --> CANCEL: 用户取消
+    INIT --> INIT: 临时故障后重试
 ```
+
+出票事务内部曾把订单从 `INIT` 更新为 `PENDING`，同一事务再写 `SUCCESS`；事务提交前外部通常看不到 `PENDING`。`FAILURE` 是保留的状态枚举，当前正常购票链路不以它表示暂时性消费失败。
 
 ## 端口
 
@@ -224,13 +222,13 @@ stateDiagram-v2
 | batch | 8103 | `/batch` |
 | 用户端 | 9000 | `/` |
 | 管理端 | 9001 | `/` |
-| Nacos | 8848 | — |
+| Nacos | 18848（当前本地配置） | — |
 | RocketMQ NameServer | 9876 | — |
 | Sentinel Dashboard | 8090 | — |
 
 ## 本地运行
 
-> **可运行性说明**：当前仓库尚未提供业务表、基础车次数据和 Quartz 表的统一 SQL 初始化脚本，因此不能从空数据库直接一键启动。下面步骤适用于已经准备好 `train` 数据库结构和基础数据的本地环境；首次访问者需要先自行补齐数据库初始化。
+> **可运行性说明**：仓库提供基础表与本轮改造所需的增量 SQL，但不包含基础车站、车次、车厢、座位数据和 Nacos 动态规则。需要在管理端录入基础数据并生成每日数据后，才能完成购票流程。
 
 ### 环境要求
 
@@ -258,13 +256,21 @@ cd train-12306-system
 |---|---|
 | MySQL | `localhost:3306/train` |
 | Redis | `localhost:6379` |
-| Nacos | `localhost:8848` |
+| Nacos | `localhost:18848`（当前本地配置，可自行修改） |
 | RocketMQ NameServer | `localhost:9876` |
 | Sentinel Dashboard | `localhost:8090` |
 
-创建 `train` 数据库，并准备项目所需表结构与基础车次数据。当前仓库尚未提供统一的数据库初始化和迁移脚本，因此全新环境需要自行初始化数据库。
+创建 `train` 数据库。以下基础脚本**包含 `DROP TABLE`，仅用于空库初始化，不能对已有数据的库重跑**：
 
-如果启用 `batch` 的数据库型 Quartz 调度，还需要准备 Quartz 所需表；仓库中的默认 Job Bean 声明已注释，需要通过管理端或 `/batch/admin/job/add` 创建 `com.yali.batch.job.DailyTrainJob` 定时任务后才会周期执行。
+| 基础脚本 | 创建内容 |
+|---|---|
+| `sql/member.sql` | 会员、乘客、会员车票基础表 |
+| `sql/business.sql` | 车次、每日座位、区间余票、确认订单等业务表；已含座位查询复合索引 |
+| `sql/batch.sql` | Quartz 调度表 |
+
+空库执行基础脚本后，再执行 `sql/ticket_order_id.sql`（给会员车票增加 `order_id` 与唯一键）、`sql/purchase_admission.sql`（请求幂等表）、`sql/outbox_event.sql`（事务消息表）。`sql/daily_train_seat_lookup_index.sql` 只用于**已有旧版业务表**补座位索引；新库的 `business.sql` 已包含同名索引，不要重复执行。对已有库只按实际表结构执行缺失的增量脚本，其中 `ALTER TABLE` 脚本只能执行一次。`sql/` 中没有基础车次数据。
+
+如果启用 `batch` 的数据库型 Quartz 调度，需要上述 `batch.sql`；仓库中的默认 Job Bean 声明已注释，需要通过管理端或 `/batch/admin/job/add` 创建 `com.yali.batch.job.DailyTrainJob` 定时任务后才会周期执行。
 
 ### 3. 修改配置
 
@@ -283,7 +289,8 @@ gateway/src/main/resources/application.yml
 - Redis 地址
 - Nacos 地址及 namespace
 - RocketMQ NameServer 地址
-- Sentinel Dashboard 地址
+- Sentinel Dashboard 地址及 Nacos 中实际使用的流控规则
+- `business` 的 `purchase.admission` 参数；仓库中的 `10000 单/秒、桶容量 5000` 仅用于容量压测
 
 两个前端通过 `VITE_SERVER` 读取网关地址，可分别创建 `web/.env.local` 和 `admin/.env.local`：
 
@@ -337,11 +344,13 @@ npm run dev
 | 主题 | 文件 |
 |---|---|
 | 购票入口与验证码 | [`ConfirmOrderController.java`](business/src/main/java/com/yali/business/controller/ConfirmOrderController.java) |
-| 订单落库与 MQ 生产 | [`BeforeConfirmOrderService.java`](business/src/main/java/com/yali/business/service/BeforeConfirmOrderService.java) |
+| 订单与 Outbox 同事务 | [`OrderCreateTxService.java`](business/src/main/java/com/yali/business/service/OrderCreateTxService.java) |
+| Outbox 后台投递 | [`OutboxRelayService.java`](business/src/main/java/com/yali/business/service/OutboxRelayService.java) |
 | MQ 消费者 | [`ConfirmOrderConsumer.java`](business/src/main/java/com/yali/business/mq/ConfirmOrderConsumer.java) |
-| 锁、批量拉单与选座 | [`ConfirmOrderService.java`](business/src/main/java/com/yali/business/service/ConfirmOrderService.java) |
+| 车次锁与选座 | [`ConfirmOrderService.java`](business/src/main/java/com/yali/business/service/ConfirmOrderService.java) |
 | 座位和区间余票落库 | [`AfterConfirmOrderService.java`](business/src/main/java/com/yali/business/service/AfterConfirmOrderService.java) |
-| Redis 令牌大闸 | [`SkTokenService.java`](business/src/main/java/com/yali/business/service/SkTokenService.java) |
+| Redis Lua 令牌桶 | [`PurchaseRateService.java`](business/src/main/java/com/yali/business/service/PurchaseRateService.java)、[`purchase_rate.lua`](business/src/main/resources/lua/purchase_rate.lua) |
+| 会员车票事件消费 | [`TicketIssuedConsumer.java`](member/src/main/java/com/yali/member/mq/TicketIssuedConsumer.java) |
 | 区间余票更新 SQL | [`DailyTrainTicketMapperCust.xml`](business/src/main/resources/mapper/cust/DailyTrainTicketMapperCust.xml) |
 | 每日车次生成 | [`DailyTrainService.java`](business/src/main/java/com/yali/business/service/DailyTrainService.java) |
 | Quartz 任务 | [`DailyTrainJob.java`](batch/src/main/java/com/yali/batch/job/DailyTrainJob.java) |
@@ -349,42 +358,37 @@ npm run dev
 
 ## 压测记录
 
-历史 JMeter 购票接口测试记录：
+本地 G9001 购票接口压测：400 个 JMeter 线程，5 秒启动，每线程 10 次。以下是**接口受理**指标，不是出票吞吐：
 
 | 指标 | 结果 |
 |---|---:|
-| 样本数 | 4,820 |
-| 吞吐量 | 约 171.9 req/s |
-| 平均响应时间 | 571 ms |
-| P95 | 1,432 ms |
-| 错误率 | 约 2.07% |
+| 样本数 | 4,000 |
+| 命令行受理吞吐 | 约 449 req/s |
+| 平均响应时间 | 528 ms |
+| P95 | 752 ms |
+| JMeter 错误率 | 0% |
 
-这些数据来自特定本地测试环境，仓库当前未包含 `.jmx` 脚本、硬件说明和原始结果文件，因此不应视为生产 SLA。购票接口返回订单号也不代表后台已经完成出票。
+这 4000 笔订单最终均出票成功，全部完成约 5 分 39 秒。另以 400 次全程一等座请求竞争当时剩余的 250 张票，最终 250 笔成功、150 笔无票；在本地单实例测试中未观察到超卖或重复占座。接口返回订单号只表示受理，不能把 449 req/s 写成出票吞吐。测试用放宽的入口限流参数，未验证 Sentinel 和令牌桶的阈值效果。`performance/` 的本地 JMeter 数据已被 Git 忽略，这些结果不应视为生产 SLA。
 
 ## 当前实现边界
 
-- 当前分支使用 Redis `SET NX + 10s TTL` 做车次粒度的开发版尽力互斥；没有 owner token、自动续期和安全解锁，处理超时后不能保证严格互斥。项目已引入 Redisson，后续可恢复为带 Watchdog 的 `RLock` 实现。
-- 订单落库与 MQ 发送尚未通过 Outbox 或事务消息形成原子闭环。
-- MQ 消息当前按日期和车次唤醒批量处理，不是一条消息严格绑定一个订单。
-- 当前消费者调用的方法仍保留早期 JVM 异步方案的 `@Async` 注解，监听线程返回与实际出票结果没有严格绑定；接入 RocketMQ 后应移除该遗留注解。
-- business 与 member 之间的会员车票写入尚未形成可靠事件和幂等闭环。
+- Redisson RLock 保证当前正常路径同车次互斥；座位旧值条件更新与本地事务是数据库层防线。本地单实例售罄测试不覆盖多实例和锁失效场景。
+- Outbox 保证订单与待发消息同事务落库，投递采用至少一次语义；Broker 已收但确认丢失时可能重复投递，不能宣称端到端 exactly once。
+- MQ 一条消息精确处理一笔订单；同车次消息并发到达后在车次锁处等待，最终出票速度仍明显低于接口受理速度。当前没有已受理订单数的硬上限。
+- member 车票使用独立事件异步创建和唯一键幂等；business `SUCCESS` 与会员车票可见之间仍有短暂延迟。
 - Seata 相关配置和注解处于注释或未完整启用状态。
-- 数据库初始化脚本、自动化测试和可复现压测材料仍需补充。
+- 已提供基础与增量 SQL；自动化测试、故障注入和可复现压测材料仍需补充。
 - 当前配置和权限逻辑仅适用于受信任的本地开发环境，禁止不经整改直接暴露到公网。
 
-具体安全缺口包括：MySQL root 密码和 JWT 密钥硬编码、日志可能输出完整 token、Gateway 对部分管理和调试路径直接放行、宽松 CORS、dev 环境跳过验证码，以及订单状态查询和取消未按当前会员校验资源归属。
+现有配置仍有本地明文凭据与环境专属地址；dev 环境跳过验证码，管理接口、CORS 和日志脱敏仍需部署前审查。订单状态查询与取消已经增加当前会员归属校验。
 
 ## 后续计划
 
-- [ ] 使用 Redisson `RLock` 替换开发分支中的固定 TTL 锁。
-- [ ] 移除 RocketMQ 消费链路遗留的 `@Async`，让消费确认与业务结果一致。
-- [ ] 使用 Transactional Outbox 或 RocketMQ 事务消息解决订单与消息双写。
-- [ ] 将消息调整为携带 `orderId`，通过条件状态迁移实现消费者幂等。
-- [ ] 为座位、余票和订单更新补充本地事务与数据库条件更新。
-- [ ] 增加超时 `PENDING` 订单恢复、重试、死信和补偿任务。
-- [ ] 增加数据库初始化脚本、单元测试、并发集成测试和故障注入测试。
+- [ ] 为长期 `INIT`、死信消息和历史异常订单增加核对、告警与恢复流程。
+- [ ] 基于持续负载测定 Sentinel 和令牌桶阈值，并限制消费者停机时仍不断受理的积压。
+- [ ] 补充多实例、Redis 故障、重复投递等并发与故障注入测试。
+- [ ] 逐步将本地凭据和环境配置迁出仓库，补充自动化测试与可复现压测材料。
 - [ ] 补充 Prometheus、链路追踪、MQ 积压与订单状态监控。
-- [ ] 补充可复现的 JMeter 脚本、环境说明和压测报告。
 
 ## 声明
 
@@ -393,102 +397,3 @@ npm run dev
 ## 作者
 
 - GitHub：[@yali325](https://github.com/yali325)
-=======
-# 微服务高性能售票系统
-
-基于 Spring Cloud 的车次查询与购票实践项目，包含会员、业务、网关和批处理服务。系统将请求受理与出票分开：购票请求先生成订单，后台通过 RocketMQ 完成选座和库存更新；座位位图支持不重叠站段复用。
-
-## 核心实现
-
-- **分层准入**：购票入口接入 Sentinel 流控资源；Redis Lua 令牌桶以日期、车次为 key，原子计算补充和扣减令牌。仓库中的 `10000 单/秒、桶容量 5000` 是容量测试参数，不是经过校准的生产阈值。
-- **可靠投递**：请求 ID、`INIT` 订单与 `ORDER_CREATED` Outbox 事件在同一 MySQL 事务中写入。后台线程领取事件、向 RocketMQ 投递并记录 Broker 确认结果；发送与标记不能原子化，消费者通过状态判断处理重复消息。
-- **逐单出票**：一条购票消息对应一笔订单。消费者按订单自身的日期和车次等待 Redisson RLock；同车次串行，不同车次可以并发。座位位图、区间余票、订单状态和 `TICKET_ISSUED` Outbox 在 business 本地事务中提交，座位旧值条件更新作为最后防线。
-- **会员车票同步**：business 出票成功后投递 `TICKET_ISSUED`，member 异步保存车票，并以订单与乘客唯一键处理重复事件。
-- **座位区间复用**：`daily_train_seat.sell` 的每一位对应一个站间区段；已售区段冲突时不可选择，未重叠区段可复用。同车厢座位查询使用 `(date, train_code, carriage_index, carriage_seat_index)` 复合索引。
-
-```mermaid
-flowchart LR
-    Web[用户端] --> Gateway[Gateway]
-    Gateway --> Business[business]
-    Business -->|入口流控| Sentinel[Sentinel]
-    Business -->|令牌桶与车次锁| Redis[(Redis)]
-    Business -->|订单 + Outbox 同事务| MySQL[(MySQL)]
-    Business -->|后台投递 ORDER_CREATED| MQ[(RocketMQ)]
-    MQ -->|逐单消费| Business
-    Business -->|TICKET_ISSUED| MQ
-    MQ -->|异步建会员车票| Member[member]
-    Member --> MySQL
-    Batch[batch] -->|每日车次生成| Business
-    Gateway -.服务发现.-> Nacos[Nacos]
-    Business -.服务发现与配置.-> Nacos
-    Member -.服务发现.-> Nacos
-```
-
-### 一次购票如何执行
-
-1. Gateway 校验登录身份；business 校验验证码（开发环境可跳过），入口经过 Sentinel 和按日期、车次的 Redis 令牌桶。
-2. 按 `requestId` 查询重复提交。新请求在本地事务中同时写入 `INIT` 订单、请求键与 `ORDER_CREATED` Outbox，HTTP 返回订单 ID，表示**已受理**。
-3. Outbox 投递器以短事务领取待发事件，向 `CONFIRM_ORDER` 投递；Broker 确认后标记 `SENT`，失败则退避重试。
-4. 消费者按消息中的 `orderId` 精确查订单，等待同日期、车次的 RLock。终态订单直接确认；`INIT` 订单在锁内选座，并用本地事务更新座位位图、受影响区间余票、订单状态和会员车票事件。
-5. member 消费 `TICKET_ISSUED` 保存车票。用户可以轮询订单状态；`PENDING` 与 `SUCCESS` 在同一个出票事务内更新，正常情况下主要看到 `INIT → SUCCESS`，无票时为 `EMPTY`。
-
-## 技术栈与模块
-
-Java 17、Spring Boot 3.5、Spring Cloud Gateway / OpenFeign、MyBatis、MySQL 8、Redis / Redisson、RocketMQ、Sentinel、Nacos、Quartz、Vue 3。
-
-| 模块 | 用途 |
-| --- | --- |
-| `gateway` | JWT 校验、服务路由 |
-| `business` | 车次、余票、购票、选座、Outbox 投递与出票消费 |
-| `member` | 会员、乘客和异步生成的车票 |
-| `batch` | Quartz 调度与每日车次生成 |
-| `common` | 通用响应、异常、上下文和公共 DTO |
-| `web` / `admin` | 用户端和管理端 Vue 页面 |
-| `generator` | MyBatis 代码生成工具 |
-
-## 本地启动
-
-需要 JDK 17、Maven、Node.js、MySQL 8、Redis、Nacos 和 RocketMQ。按本机环境检查四个后端模块的 `src/main/resources/application.yml`，包括数据库、Redis、Nacos 和 RocketMQ 地址。配置文件含本地开发值；用于公开部署前应改为外部配置或环境变量，不要直接沿用。
-
-1. 创建空的 `train` 数据库，**只在空库**执行 `sql/member.sql`、`sql/business.sql`、`sql/batch.sql`。这些基础脚本包含 `DROP TABLE`，会删除旧数据。
-2. 新库随后执行 `sql/ticket_order_id.sql`、`sql/purchase_admission.sql`、`sql/outbox_event.sql`。`business.sql` 已包含座位查询索引，**新库无需再执行** `daily_train_seat_lookup_index.sql`。
-3. **已有旧版数据库**应按实际表结构分别执行上述增量脚本；`ticket_order_id.sql` 与 `daily_train_seat_lookup_index.sql` 是一次性 `ALTER TABLE`，重复执行会因列或索引已存在而失败。不要在现有库上重跑基础脚本。
-4. 启动 MySQL、Redis、Nacos、RocketMQ，再启动 `member`、`business`、`batch`、`gateway`。管理端录入基础车站、车次、车厢和座位后，生成指定日期的每日车次、车站、车厢、座位及区间余票。
-
-默认本地端口：Gateway `8100`、member `8101`、business `8102`、batch `8103`。用户端和管理端分别位于 `web/`、`admin/`，各自运行 `npm ci` 与 `npm run dev`。首次运行还需要准备 Nacos 配置和相应的 Sentinel 规则；仓库不附带本地测试所用的动态规则数据。
-
-## SQL 文件说明
-
-| 文件 | 用途 |
-| --- | --- |
-| `batch.sql` | Quartz 调度表基础结构 |
-| `member.sql` | 会员、乘客和车票基础表 |
-| `business.sql` | 车次、每日座位、区间余票和订单等基础表；已包含座位查询索引 |
-| `ticket_order_id.sql` | 给已有 `ticket` 表增加可空 `order_id` 和 `(order_id, passenger_id)` 唯一键 |
-| `purchase_admission.sql` | 创建 `purchase_request`，以会员 ID＋请求 ID 保证入口重复提交幂等 |
-| `outbox_event.sql` | 创建 `outbox_event`，保存购票与会员车票事件的投递状态、租约和重试时间 |
-| `daily_train_seat_lookup_index.sql` | 给**已有** `daily_train_seat` 表补按车次、车厢、座序查询的复合索引 |
-
-## 本地压测结果
-
-在同一台本地环境中，JMeter 使用 400 线程、5 秒启动、每线程 10 次，共 4000 个购票请求；接口**受理**吞吐约 **449 req/s**，平均响应 **528 ms**、P95 **752 ms**、JMeter 错误率 **0%**。4000 笔订单最终均成功出票，全部完成约 **5 分 39 秒**。另以 400 个全程一等座请求竞争当时剩余的 250 张票，最终 250 笔成功、150 笔无票，未观察到超卖或重复占用全程座位。
-
-上述数字属于特定本地环境；HTTP 受理吞吐不是实际出票吞吐。测试使用放宽的入口限流参数，没有验证 Sentinel 与令牌桶的阈值效果。`performance/` 包含本地 JMeter 结果和测试数据，已从 Git 提交中排除。
-
-## 当前边界
-
-- 同一日期、车次的出票仍由一把 RLock 串行处理，热点车次的最终出票速度低于接口受理速度；现阶段没有已受理订单数量的硬上限。
-- Outbox 和 MQ 采用至少一次处理思路；长期 `INIT`、死信消息和历史异常状态仍需要监控及恢复流程。不能宣称端到端 exactly once。
-- 250 张余票的售罄验证是在本地当前实例完成的，尚未覆盖多实例、Redis 故障和锁失效等场景。
-- Sentinel 流控资源及 Nacos 数据源已接入，但本地容量测试不证明运行时流控阈值有效，也不代表已验证熔断规则。
-
-## 代码入口
-
-- 购票接口：[ConfirmOrderController](business/src/main/java/com/yali/business/controller/ConfirmOrderController.java)
-- Redis 令牌桶：[PurchaseRateService](business/src/main/java/com/yali/business/service/PurchaseRateService.java)、[Lua 脚本](business/src/main/resources/lua/purchase_rate.lua)
-- 订单与 Outbox 同事务：[OrderCreateTxService](business/src/main/java/com/yali/business/service/OrderCreateTxService.java)
-- Outbox 投递：[OutboxRelayService](business/src/main/java/com/yali/business/service/OutboxRelayService.java)
-- 购票消费者与选座：[ConfirmOrderConsumer](business/src/main/java/com/yali/business/mq/ConfirmOrderConsumer.java)、[ConfirmOrderService](business/src/main/java/com/yali/business/service/ConfirmOrderService.java)
-- 出票事务：[AfterConfirmOrderService](business/src/main/java/com/yali/business/service/AfterConfirmOrderService.java)
-- 会员车票消费者：[TicketIssuedConsumer](member/src/main/java/com/yali/member/mq/TicketIssuedConsumer.java)
->>>>>>> d16a315 (完善购票可靠性与高并发出票链路)
