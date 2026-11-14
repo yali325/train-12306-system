@@ -96,32 +96,39 @@ train/
 
 ## 核心购票链路
 
+**订单受理与投递**：Gateway 校验 JWT 后将请求转给 business，购票入口还受 Sentinel 流控保护。
+
 ```mermaid
 sequenceDiagram
-    participant Web as 用户端
-    participant Gateway as Gateway
-    participant Business as business
-    participant Redis as Redis
-    participant DB as MySQL
-    participant MQ as RocketMQ
-    participant Consumer as 出票消费者
-    participant Member as member
+    participant U as 用户
+    participant B as business
+    participant R as Redis
+    participant D as MySQL
+    participant Q as RocketMQ
+    U->>B: 提交购票请求
+    B->>R: 校验验证码、扣车次令牌
+    B->>D: 事务写 INIT 订单与 Outbox
+    B-->>U: 返回 orderId（已受理）
+    B->>D: 后台领取待发事件
+    B->>Q: 投递 CONFIRM_ORDER
+```
 
-    Web->>Gateway: POST /business/confirm-order/do
-    Gateway->>Gateway: 校验 JWT
-    Gateway->>Business: 转发购票请求
-    Business->>Redis: 非 dev 环境校验验证码、按车次扣令牌
-    Business->>DB: 事务写请求键、INIT 订单和 ORDER_CREATED Outbox
-    Business-->>Web: 返回 orderId，表示已受理
-    Business->>DB: 后台领取待投递事件
-    Business->>MQ: 投递 CONFIRM_ORDER(orderId)
-    MQ->>Consumer: 一条消息对应一笔订单
-    Consumer->>Redis: 等待日期+车次 RLock
-    Consumer->>DB: 查余票、按位图选座
-    Consumer->>DB: 事务更新订单、座位、区间余票及 TICKET_ISSUED Outbox
-    Consumer-->>MQ: 正常返回后确认消费
-    Business->>MQ: 后台投递 TICKET_ISSUED
-    MQ->>Member: 异步保存会员车票
+**逐单出票与会员车票**：MQ 消息携带 `orderId`，一条消息只处理一笔订单。
+
+```mermaid
+sequenceDiagram
+    participant Q as RocketMQ
+    participant B as business 消费者
+    participant R as Redis
+    participant D as MySQL
+    participant M as member
+    Q->>B: 交付一笔订单
+    B->>R: 等待日期+车次 RLock
+    B->>D: 查余票、按位图选座
+    B->>D: 事务更新座位、余票、订单与车票事件
+    B-->>Q: 处理完成后确认消费
+    B->>Q: 投递 TICKET_ISSUED
+    Q->>M: 异步保存会员车票
 ```
 
 当前 RocketMQ 消息主要包含：
