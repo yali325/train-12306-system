@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yali.business.mapper.cust.OutboxEventMapper">
+
+    <resultMap id="OutboxEventMap" type="com.yali.business.domain.OutboxEvent">
+        <id column="id" property="id"/>
+        <result column="order_id" property="orderId"/>
+        <result column="event_type" property="eventType"/>
+        <result column="topic" property="topic"/>
+        <result column="payload" property="payload"/>
+        <result column="status" property="status"/>
+        <result column="retry_count" property="retryCount"/>
+        <result column="claim_token" property="claimToken"/>
+    </resultMap>
+
+    <insert id="insert" parameterType="com.yali.business.domain.OutboxEvent">
+        INSERT INTO outbox_event
+            (id, order_id, event_type, topic, payload, status,
+             retry_count, next_retry_at, create_time, update_time)
+        VALUES
+            (#{id}, #{orderId}, #{eventType}, #{topic}, #{payload}, #{status},
+             0, NOW(3), NOW(3), NOW(3))
+    </insert>
+
+    <!-- 只在短事务中调用；SKIP LOCKED 让多个实例跳过别的工作者已领取的行。 -->
+    <select id="selectReadyForUpdate" resultMap="OutboxEventMap">
+        SELECT id, order_id, event_type, topic, payload, status, retry_count, claim_token
+        FROM outbox_event
+        WHERE status = 'NEW'
+           OR (status = 'RETRY' AND next_retry_at &lt;= NOW(3))
+           OR (status = 'SENDING' AND lease_until &lt;= NOW(3))
+        ORDER BY id
+        LIMIT 1
+        FOR UPDATE SKIP LOCKED
+    </select>
+
+    <update id="markSending">
+        UPDATE outbox_event
+        SET status = 'SENDING',
+            claim_token = #{claimToken},
+            lease_until = DATE_ADD(NOW(3), INTERVAL #{leaseSeconds} SECOND),
+            retry_count = retry_count + 1,
+            last_error = NULL,
+            update_time = NOW(3)
+        WHERE id = #{id} AND status IN ('NEW', 'RETRY', 'SENDING')
+    </update>
+
+    <update id="markSent">
+        UPDATE outbox_event
+        SET status = 'SENT', claim_token = NULL, lease_until = NULL,
+            sent_time = NOW(3), last_error = NULL, update_time = NOW(3)
+        WHERE id = #{id} AND status = 'SENDING' AND claim_token = #{claimToken}
+    </update>
+
+    <update id="markRetry">
+        UPDATE outbox_event
+        SET status = 'RETRY', claim_token = NULL, lease_until = NULL,
+            next_retry_at = DATE_ADD(NOW(3), INTERVAL #{delaySeconds} SECOND),
+            last_error = #{lastError}, update_time = NOW(3)
+        WHERE id = #{id} AND status = 'SENDING' AND claim_token = #{claimToken}
+    </update>
+</mapper>

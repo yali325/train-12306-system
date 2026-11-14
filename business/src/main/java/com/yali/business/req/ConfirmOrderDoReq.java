@@ -4,11 +4,19 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 
 import java.util.Date;
 import java.util.List;
 
 public class ConfirmOrderDoReq {
+
+    @NotBlank(message = "【请求ID】不能为空")
+    @Size(max = 64, message = "【请求ID】长度不能超过64")
+    private String requestId;
+
+    public String getRequestId() { return requestId; }
+    public void setRequestId(String requestId) { this.requestId = requestId; }
 
     /**
      * 会员id
@@ -69,10 +77,6 @@ public class ConfirmOrderDoReq {
      */
     private String logId;
 
-    /**
-     * 加入排队人数，用于体验排队功能
-     */
-    private int lineNumber;
 
     public Long getMemberId() {
         return memberId;
@@ -154,13 +158,6 @@ public class ConfirmOrderDoReq {
         this.logId = logId;
     }
 
-    public int getLineNumber() {
-        return lineNumber;
-    }
-
-    public void setLineNumber(int lineNumber) {
-        this.lineNumber = lineNumber;
-    }
 
     @Override
     public String toString() {
@@ -175,7 +172,7 @@ public class ConfirmOrderDoReq {
                 ", imageCode='" + imageCode + '\'' +
                 ", imageCodeToken='" + imageCodeToken + '\'' +
                 ", logId='" + logId + '\'' +
-                ", lineNumber=" + lineNumber +
+                ", requestId='" + requestId + '\'' +
                 '}';
     }
 }

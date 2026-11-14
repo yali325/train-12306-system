@@ -6,6 +6,7 @@ import cn.hutool.core.util.ObjUtil;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import com.yali.common.req.MemberTicketReq;
+import com.yali.common.dto.TicketIssuedEvent;
 import com.yali.common.resp.PageResp;
 import com.yali.common.util.SnowUtil;
 import com.yali.member.entity.Ticket;
@@ -18,6 +19,9 @@ import jakarta.annotation.Resource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.dao.DuplicateKeyException;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -28,6 +32,39 @@ public class TicketService {
 
     @Resource
     private TicketMapper ticketMapper;
+
+    @Resource
+    private JdbcTemplate jdbcTemplate;
+
+    /** 同一订单的所有乘客车票在 member 本地事务里一起落库。 */
+    @Transactional
+    public void saveIssued(TicketIssuedEvent event) {
+        String sql = """
+                INSERT INTO ticket (id, order_id, member_id, passenger_id, passenger_name,
+                    train_date, train_code, carriage_index, seat_row, seat_col,
+                    start_station, start_time, end_station, end_time, seat_type,
+                    create_time, update_time)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(3), NOW(3))
+                """;
+        for (MemberTicketReq req : event.getTickets()) {
+            try {
+                jdbcTemplate.update(sql, SnowUtil.getSnowflakeNextId(), event.getOrderId(),
+                        req.getMemberId(), req.getPassengerId(), req.getPassengerName(),
+                        req.getTrainDate(), req.getTrainCode(), req.getCarriageIndex(),
+                        req.getSeatRow(), req.getSeatCol(), req.getStartStation(),
+                        req.getStartTime(), req.getEndStation(), req.getEndTime(),
+                        req.getSeatType());
+            } catch (DuplicateKeyException duplicate) {
+                Integer existing = jdbcTemplate.queryForObject(
+                        "select count(*) from ticket where order_id = ? and passenger_id = ?",
+                        Integer.class, event.getOrderId(), req.getPassengerId());
+                if (existing == null || existing != 1) {
+                    // 若冲突来自主键 ID 而非本订单乘客，不能误认为幂等成功。
+                    throw duplicate;
+                }
+            }
+        }
+    }
 
     /**
      * 会员购买车票后新增保存

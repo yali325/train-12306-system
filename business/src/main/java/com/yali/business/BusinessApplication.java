@@ -12,6 +12,7 @@ import org.springframework.cloud.openfeign.EnableFeignClients;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.core.env.Environment;
 import org.springframework.scheduling.annotation.EnableAsync;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -21,6 +22,7 @@ import java.util.List;
 @MapperScan("com.yali.business.mapper")
 @EnableFeignClients("com.yali.business.feign")
 @EnableAsync
+@EnableScheduling
 public class  BusinessApplication {
 
     private static final Logger LOG = LoggerFactory.getLogger(BusinessApplication.class);

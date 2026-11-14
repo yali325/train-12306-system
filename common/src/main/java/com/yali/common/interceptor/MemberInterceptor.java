@@ -23,11 +23,12 @@ public class MemberInterceptor implements HandlerInterceptor {
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
+        LoginMemberContext.clear(); // 请求线程复用时，先清除上一次请求留下的会员身份。
         LOG.info("MemberInterceptor开始");
         //获取header的token参数
         String token = request.getHeader("token");
         if (StrUtil.isNotBlank(token)) {
-            LOG.info("获取会员登录token：{}", token);
+            LOG.info("获取到会员登录 token");
             JSONObject loginMember = JwtUtil.getJSONObject(token);
             LOG.info("当前登录会员：{}", loginMember);
             MemberLoginResp member = JSONUtil.toBean(loginMember, MemberLoginResp.class);
@@ -35,6 +36,12 @@ public class MemberInterceptor implements HandlerInterceptor {
         }
         LOG.info("MemberInterceptor结束");
         return true;
+    }
+
+    @Override
+    public void afterCompletion(HttpServletRequest request, HttpServletResponse response,
+                                Object handler, Exception ex) {
+        LoginMemberContext.clear();
     }
 
 }

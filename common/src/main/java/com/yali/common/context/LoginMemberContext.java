@@ -7,7 +7,7 @@ import org.slf4j.LoggerFactory;
 public class LoginMemberContext {
     private static final Logger LOG = LoggerFactory.getLogger(LoginMemberContext.class);
 
-    private static ThreadLocal<MemberLoginResp> member = new ThreadLocal<>();
+    private static final ThreadLocal<MemberLoginResp> member = new ThreadLocal<>();
 
     public static MemberLoginResp getMember() {
         return member.get();
@@ -15,6 +15,10 @@ public class LoginMemberContext {
 
     public static void setMember(MemberLoginResp member) {
         LoginMemberContext.member.set(member);
+    }
+
+    public static void clear() {
+        member.remove();
     }
 
     public static Long getId() {

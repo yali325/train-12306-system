@@ -95,11 +95,6 @@
         <div style="color: #999999">提示：您可以选择{{tickets.length}}个座位</div>
       </div>
       <br>
-      <div style="color: red">
-        体验排队购票，加入多人一起排队购票：
-        <a-input-number v-model:value="lineNumber" :min="0" :max="20" />
-      </div>
-      <br/>
       最终购票：{{tickets}}
       最终选座：{{chooseSeatObj}}
     </div>
@@ -145,8 +140,11 @@
       <div v-show="confirmOrderLineCount < 0">
         <loading-outlined /> 系统正在处理中...
       </div>
-      <div v-show="confirmOrderLineCount >= 0">
-        <loading-outlined /> 您前面还有{{confirmOrderLineCount}}位用户在购票，排队中，请稍候
+      <div v-show="confirmOrderLineCount === 1">
+        <loading-outlined /> 已受理，等待出票，请稍候
+      </div>
+      <div v-show="confirmOrderLineCount === 0">
+        <loading-outlined /> 正在出票，请稍候
       </div>
     </div>
     <br/>
@@ -210,7 +208,7 @@ export default defineComponent({
     const lineModalVisible = ref(false);
     const confirmOrderId = ref();
     const confirmOrderLineCount = ref(-1);
-    const lineNumber = ref(0);
+    const purchaseRequestId = ref(null);
 
     // 勾选或去掉某个乘客时，在购票列表中加上或去掉一张表
     watch(() => passengerChecks.value, (newVal, oldVal)=>{
@@ -375,7 +373,10 @@ export default defineComponent({
       console.log("最终购票：", tickets.value);
 
       confirmOrderLoading.value = true;
+      // 网络超时后重试沿用同一个请求 ID，避免重复创建订单。
+      if (!purchaseRequestId.value) purchaseRequestId.value = crypto.randomUUID();
       axios.post("/business/confirm-order/do", {
+        requestId: purchaseRequestId.value,
         dailyTrainTicketId: dailyTrainTicket.id,
         date: dailyTrainTicket.date,
         trainCode: dailyTrainTicket.trainCode,
@@ -383,8 +384,7 @@ export default defineComponent({
         end: dailyTrainTicket.end,
         tickets: tickets.value,
         imageCodeToken: imageCodeToken.value,
-        imageCode: imageCode.value,
-        lineNumber: lineNumber.value
+        imageCode: imageCode.value
       }).then((response) => {
         let data = response.data;
         if (data.success) {
@@ -397,6 +397,7 @@ export default defineComponent({
           imageCodeSrc.value = null;
           lineModalVisible.value = true;
           confirmOrderId.value = data.content;
+          purchaseRequestId.value = null;
           if (confirmOrderId.value) {
             queryLineCount();
           } else {
@@ -588,7 +589,7 @@ export default defineComponent({
       confirmOrderId,
       confirmOrderLineCount,
       onCancelOrder,
-      lineNumber
+      purchaseRequestId
     };
   },
 });

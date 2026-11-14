@@ -2,7 +2,8 @@ package com.yali.business.enums;
 
 public enum RocketMQTopicEnum {
 
-    CONFIRM_ORDER("CONFIRM_ORDER", "确认订单排队");
+    CONFIRM_ORDER("CONFIRM_ORDER", "确认订单排队"),
+    TICKET_ISSUED("TICKET_ISSUED", "会员车票同步");
 
     private String code;
 

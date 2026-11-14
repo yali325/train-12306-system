@@ -5,6 +5,8 @@ import com.alibaba.csp.sentinel.slots.block.BlockException;
 import com.yali.business.req.ConfirmOrderDoReq;
 import com.yali.business.service.BeforeConfirmOrderService;
 import com.yali.business.service.ConfirmOrderService;
+import com.yali.business.mapper.cust.PurchaseRequestMapper;
+import com.yali.common.context.LoginMemberContext;
 import com.yali.common.exception.BusinessExceptionEnum;
 import com.yali.common.resp.CommonResp;
 import jakarta.annotation.Resource;
@@ -34,11 +36,14 @@ public class ConfirmOrderController {
 
     @Resource
     private ConfirmOrderService confirmOrderService;
+    @Resource private PurchaseRequestMapper purchaseRequestMapper;
 
     // 接口的资源名称不要和接口路径一致，会导致限流后走不到降级方法中
     @SentinelResource(value = "confirmOrderDo", blockHandler = "doConfirmBlock")
     @PostMapping("/do")
     public CommonResp<Object> doConfirm(@Valid @RequestBody ConfirmOrderDoReq req) {
+        Long existing = purchaseRequestMapper.findOrderId(LoginMemberContext.getId(), req.getRequestId());
+        if (existing != null) return new CommonResp<>(String.valueOf(existing));
         if (!env.equals("dev")) {
             // 图形验证码校验
             String imageCodeToken = req.getImageCodeToken();
