@@ -104,8 +104,6 @@ rocketmq:
     group: train-confirm-order-producer
     send-message-timeout: 10000
     retry-times-when-send-failed: 1
-<<<<<<< HEAD
-=======
 
 # 订单事务 Outbox 后台投递。线程数和轮询间隔是初始配置，最终按全链路压测调节。
 outbox:
@@ -121,4 +119,3 @@ purchase:
   admission:
     rate-per-second: 10000
     burst-capacity: 5000
->>>>>>> d16a315 (完善购票可靠性与高并发出票链路)
